@@ -3,17 +3,22 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "node -e \"process.exit(0)\"",
+    "build": "tsc -p tsconfig.json",
     "db:generate": "drizzle-kit generate --config=drizzle.config.ts",
+    "start": "node dist/server.js",
+    "start:worker": "node dist/worker.js",
     "test": "vitest run",
     "test:env": "vitest run src/lib/__tests__/env.test.ts",
     "lint": "node -e \"process.exit(0)\""
   },
   "dependencies": {
-    "drizzle-orm": "^0.45.2"
+    "drizzle-orm": "^0.45.2",
+    "fastify": "^5.6.1"
   },
   "devDependencies": {
+    "@types/node": "^24.6.1",
     "drizzle-kit": "^0.31.10",
+    "typescript": "^5.9.3",
     "vitest": "^3.2.0"
   }
 }

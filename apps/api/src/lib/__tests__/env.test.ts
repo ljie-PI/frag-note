@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 describe('parseEnv', () => {
   it('requires database and redis configuration', async () => {
-    const { parseEnv } = await import('../env');
+    const { parseEnv } = await import('../env.js');
 
     expect(
       parseEnv({

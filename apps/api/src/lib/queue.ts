@@ -1,4 +1,4 @@
-import type { ParsedEnv } from './env';
+import type { ParsedEnv } from './env.js';
 
 export type QueueClient = {
   kind: 'redis';
