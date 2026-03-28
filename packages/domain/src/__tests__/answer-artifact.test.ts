@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { answerArtifactSchema } from '../index';
+import { answerArtifactSchema } from '../index.ts';
 import { seedAnswer, seedFragments } from '@sui-note/testing';
 
 describe('answerArtifactSchema', () => {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { citationSchema, derivedArtifactSchema } from '../index';
+import { citationSchema, derivedArtifactSchema } from '../index.ts';
 
 describe('derivedArtifactSchema', () => {
   it('accepts canonical artifact records with citations', () => {

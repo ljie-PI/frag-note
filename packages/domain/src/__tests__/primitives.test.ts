@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isoUtcTimestampSchema } from '../models/primitives';
+import { isoUtcTimestampSchema } from '../models/primitives.ts';
 
 describe('isoUtcTimestampSchema', () => {
   it('rejects impossible UTC timestamps even when the string shape is correct', () => {

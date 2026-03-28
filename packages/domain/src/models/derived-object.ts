@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { citationSchema } from './citation';
+import { citationSchema } from './citation.ts';
 
 export const derivedObjectSchema = z.strictObject({
   objectId: z.string().uuid(),
