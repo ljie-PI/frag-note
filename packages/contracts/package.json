@@ -1,0 +1,23 @@
+{
+  "name": "@sui-note/contracts",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./auth": "./src/auth.ts",
+    "./fragments": "./src/fragments.ts",
+    "./search": "./src/search.ts"
+  },
+  "scripts": {
+    "build": "node -e \"process.exit(0)\"",
+    "test": "vitest run",
+    "lint": "node -e \"process.exit(0)\""
+  },
+  "dependencies": {
+    "@sui-note/domain": "workspace:*",
+    "zod": "^4.1.11"
+  },
+  "devDependencies": {
+    "@sui-note/testing": "workspace:*",
+    "vitest": "^3.2.0"
+  }
+}

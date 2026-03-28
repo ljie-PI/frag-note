@@ -1,0 +1,27 @@
+{
+  "name": "@sui-note/api",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "db:generate": "drizzle-kit generate --config=drizzle.config.ts",
+    "start": "node dist/server.js",
+    "start:worker": "node dist/worker.js",
+    "test:health": "vitest run src/routes/__tests__/health.test.ts",
+    "test:shell": "vitest run src/routes/__tests__/health.test.ts src/__tests__/server.test.ts src/__tests__/worker.test.ts",
+    "test": "vitest run",
+    "test:env": "vitest run src/lib/__tests__/env.test.ts",
+    "lint": "node -e \"process.exit(0)\""
+  },
+  "dependencies": {
+    "@sui-note/contracts": "workspace:*",
+    "drizzle-orm": "^0.45.2",
+    "fastify": "^5.6.1"
+  },
+  "devDependencies": {
+    "@types/node": "^24.6.1",
+    "drizzle-kit": "^0.31.10",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.0"
+  }
+}
