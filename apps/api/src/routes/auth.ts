@@ -8,7 +8,7 @@ import { createDeviceSession } from '../services/auth/session-service.js';
 export function registerAuthRoute(app: FastifyInstance) {
   app.post('/v1/auth/device-session', async (request, reply) => {
     const parsedRequest = createDeviceSessionRequestSchema.safeParse(
-      request.body ?? {},
+      request.body,
     );
 
     if (!parsedRequest.success) {

@@ -40,4 +40,21 @@ describe('POST /v1/auth/device-session', () => {
 
     await app.close();
   });
+
+  it('rejects a null request body', async () => {
+    const app = buildApp();
+
+    const response = await app.inject({
+      method: 'POST',
+      url: '/v1/auth/device-session',
+      headers: {
+        'content-type': 'application/json',
+      },
+      payload: 'null',
+    });
+
+    expect(response.statusCode).toBe(400);
+
+    await app.close();
+  });
 });
