@@ -8,6 +8,7 @@
     "start": "node dist/server.js",
     "start:worker": "node dist/worker.js",
     "test:health": "vitest run src/routes/__tests__/health.test.ts",
+    "test:shell": "vitest run src/routes/__tests__/health.test.ts src/__tests__/server.test.ts src/__tests__/worker.test.ts",
     "test": "vitest run",
     "test:env": "vitest run src/lib/__tests__/env.test.ts",
     "lint": "node -e \"process.exit(0)\""

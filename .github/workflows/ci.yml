@@ -27,7 +27,7 @@ jobs:
         run: pnpm install --no-frozen-lockfile
 
       - name: Test API
-        run: pnpm --filter @sui-note/api test:health
+        run: pnpm --filter @sui-note/api test:shell
 
       - name: Build API
         run: pnpm --filter @sui-note/api build
