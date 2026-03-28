@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'bun:test';
 
 describe('workspace packages', () => {
   it('loads the canonical package entrypoints', async () => {

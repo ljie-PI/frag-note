@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
-import { processingJobSchema } from '../index';
+import { describe, expect, it } from 'bun:test';
+import { processingJobSchema } from '../../packages/domain/src/index';
 
 describe('processingJobSchema', () => {
   it('captures lifecycle state for processing jobs', () => {

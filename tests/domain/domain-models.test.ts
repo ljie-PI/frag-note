@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'bun:test';
 import {
   answerArtifactSchema,
   assetSchema,
@@ -8,11 +8,11 @@ import {
   fragmentSchema,
   processingJobSchema,
   relationSchema,
-} from '../index';
+} from '../../packages/domain/src/index';
 import {
-  seedCandidate,
   seedAnswer,
   seedAsset,
+  seedCandidate,
   seedDerivedArtifact,
   seedFragments,
   seedProcessingJob,

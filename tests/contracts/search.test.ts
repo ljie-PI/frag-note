@@ -1,8 +1,8 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'bun:test';
 import {
   searchQueryContractSchema,
   searchResultContractSchema,
-} from '../search';
+} from '../../packages/contracts/src/search';
 import {
   seedAnswer,
   seedCandidate,

@@ -1,5 +1,5 @@
-import { afterEach, describe, expect, it } from 'vitest';
-import { startServer } from '../server.js';
+import { afterEach, describe, expect, it } from 'bun:test';
+import { startServer } from '../../apps/api/src/server.js';
 
 const originalPort = process.env.PORT;
 

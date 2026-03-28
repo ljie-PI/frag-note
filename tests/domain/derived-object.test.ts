@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
-import { derivedObjectSchema } from '../index';
+import { describe, expect, it } from 'bun:test';
+import { derivedObjectSchema } from '../../packages/domain/src/index';
 
 describe('derivedObjectSchema', () => {
   it('tracks supporting fragments, citations, and relation edges', () => {
