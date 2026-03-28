@@ -8,16 +8,27 @@ import {
   processingJobSchema,
   relationSchema,
 } from '../index';
+import {
+  seedAsset,
+  seedDerivedArtifact,
+  seedProcessingJob,
+  seedRelation,
+} from '../../../testing/src';
 
 describe('domain models', () => {
   it('exports the full fragment-first object family', () => {
     expect(fragmentSchema.shape.fragmentId).toBeDefined();
+    expect(fragmentSchema.shape.createdAt).toBeDefined();
+    expect(fragmentSchema.shape.deviceMetadata).toBeDefined();
     expect(assetSchema.shape.assetId).toBeDefined();
+    expect(assetSchema.shape.storagePath).toBeDefined();
     expect(derivedArtifactSchema.shape.citations).toBeDefined();
+    expect(derivedArtifactSchema.shape.providerMetadata).toBeDefined();
     expect(derivedObjectSchema.shape.supportingFragmentIds).toBeDefined();
     expect(processingJobSchema.shape.jobType).toBeDefined();
     expect(answerArtifactSchema.shape.retrievalBundle).toBeDefined();
     expect(relationSchema.shape.sourceObjectType).toBeDefined();
+    expect(relationSchema.shape.createdAt).toBeDefined();
   });
 
   it('parses canonical relation contracts', () => {
@@ -31,8 +42,22 @@ describe('domain models', () => {
       confidence: 0.92,
       explanation: 'Fragments support the candidate object.',
       algorithmVersion: 'v1',
+      createdAt: '2026-03-28T10:00:00.000Z',
     });
 
     expect(relation.relationType).toBe('supported_by');
+  });
+
+  it('parses canonical shared asset and pipeline fixtures', () => {
+    const asset = assetSchema.parse(seedAsset);
+    const artifact = derivedArtifactSchema.parse(seedDerivedArtifact);
+    const relation = relationSchema.parse(seedRelation);
+    const job = processingJobSchema.parse(seedProcessingJob);
+
+    expect(asset.storagePath.bucket).toBe('captures');
+    expect(asset.fileNameOptional).toBe('ocr-research.png');
+    expect(artifact.version).toBe('2026-03-28.1');
+    expect(relation.createdAt).toBe('2026-03-28T10:06:00.000Z');
+    expect(job.status).toBe('queued');
   });
 });

@@ -5,7 +5,11 @@ export const assetSchema = z.object({
   fragmentId: z.string().uuid(),
   assetType: z.enum(['original', 'preview', 'attachment']),
   mimeType: z.string(),
-  storageKey: z.string(),
+  storagePath: z.object({
+    bucket: z.string(),
+    key: z.string(),
+  }),
+  fileNameOptional: z.string().nullable().optional(),
   checksum: z.string().nullable(),
   byteSize: z.number().int().nonnegative(),
   createdAt: z.string(),

@@ -16,6 +16,7 @@ export const relationSchema = z.object({
   relationType: z.string(),
   confidence: z.number(),
   explanation: z.string(),
+  createdAt: z.string(),
   algorithmVersion: z.string().optional(),
 });
 

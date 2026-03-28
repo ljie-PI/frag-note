@@ -27,6 +27,10 @@ export const derivedArtifactSchema = z.object({
     'embedding',
     'answer',
   ]),
+  version: z.string(),
+  content: z.record(z.string(), z.unknown()),
+  providerMetadata: z.record(z.string(), z.string()),
+  createdAt: z.string(),
   citations: z.array(citationSchema),
 });
 
