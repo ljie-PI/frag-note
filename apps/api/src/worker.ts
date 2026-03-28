@@ -14,7 +14,12 @@ export async function runWorker(
   }
 
   await new Promise<void>((resolve) => {
+    const keepAliveInterval = setInterval(() => {
+      // Keep the shell process alive until a real worker loop exists.
+    }, 60_000);
+
     const cleanup = () => {
+      clearInterval(keepAliveInterval);
       options.signal?.removeEventListener('abort', handleAbort);
       process.off('SIGINT', handleSignal);
       process.off('SIGTERM', handleSignal);
