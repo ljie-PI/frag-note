@@ -9,7 +9,7 @@ describe('parseEnv', () => {
         DATABASE_URL: 'postgresql://postgres:postgres@127.0.0.1:5432/sui_note',
         REDIS_URL: 'redis://127.0.0.1:6379',
       }),
-    ).toMatchObject({
+    ).toEqual({
       database: {
         url: 'postgresql://postgres:postgres@127.0.0.1:5432/sui_note',
       },

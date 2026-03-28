@@ -4,11 +4,16 @@
   "type": "module",
   "scripts": {
     "build": "node -e \"process.exit(0)\"",
+    "db:generate": "drizzle-kit generate --config=drizzle.config.ts",
     "test": "vitest run",
     "test:env": "vitest run src/lib/__tests__/env.test.ts",
     "lint": "node -e \"process.exit(0)\""
   },
+  "dependencies": {
+    "drizzle-orm": "^0.45.2"
+  },
   "devDependencies": {
+    "drizzle-kit": "^0.31.10",
     "vitest": "^3.2.0"
   }
 }
