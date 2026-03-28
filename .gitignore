@@ -2,3 +2,4 @@
 node_modules/
 dist/
 docs/superpowers/
+apps/desktop/src-tauri/target/

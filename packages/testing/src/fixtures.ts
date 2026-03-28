@@ -114,6 +114,8 @@ export const seedCandidate = {
   ],
   relationEdges: ['55555555-5555-4555-8555-555555555555'],
   ruleVersion: 'v1',
+  createdAt: '2026-03-28T10:06:00.000Z',
+  updatedAt: '2026-03-28T10:06:00.000Z',
 } as const;
 
 export const seedRelation = {
@@ -146,6 +148,7 @@ export const seedAnswer = {
   answerId: '33333333-3333-4333-8333-333333333333',
   queryText: 'What is OCR useful for?',
   queryType: 'natural_language',
+  answerBody: 'OCR helps convert screenshots into searchable text.',
   answerFormat: 'summary',
   retrievalBundle: [
     '11111111-1111-4111-8111-111111111111',
@@ -165,4 +168,10 @@ export const seedAnswer = {
       supportPath: 'direct',
     },
   ],
+  provenance: {
+    sourceQuery: 'What is OCR useful for?',
+    citedFragmentIds: ['11111111-1111-4111-8111-111111111111'],
+  },
+  savedAsFragment: false,
+  createdAt: '2026-03-28T10:07:00.000Z',
 } as const;
