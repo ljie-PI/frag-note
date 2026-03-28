@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import {
-  answerArtifactSchema,
   citationLocatorSchema,
+  queryTypeSchema,
 } from '@sui-note/domain';
 
 export const searchResultObjectTypeSchema = z.enum([
@@ -13,7 +13,7 @@ export const searchResultObjectTypeSchema = z.enum([
 
 export const searchQueryContractSchema = z.object({
   queryText: z.string(),
-  queryType: answerArtifactSchema.shape.queryType,
+  queryType: queryTypeSchema,
 });
 
 export const searchResultContractSchema = z.object({

@@ -1,5 +1,6 @@
 export * from './models/answer-artifact';
 export * from './models/asset';
+export * from './models/citation';
 export * from './models/derived-artifact';
 export * from './models/derived-object';
 export * from './models/fragment';
