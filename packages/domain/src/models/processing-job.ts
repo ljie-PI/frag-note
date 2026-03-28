@@ -1,6 +1,7 @@
 import { z } from 'zod';
+import { isoUtcTimestampSchema } from './primitives';
 
-export const processingJobSchema = z.object({
+export const processingJobSchema = z.strictObject({
   jobId: z.string().uuid(),
   fragmentId: z.string().uuid(),
   jobType: z.string(),
@@ -9,8 +10,8 @@ export const processingJobSchema = z.object({
   provider: z.string(),
   errorCode: z.string().nullable(),
   errorMessage: z.string().nullable(),
-  startedAt: z.string().nullable(),
-  completedAt: z.string().nullable(),
+  startedAt: isoUtcTimestampSchema.nullable(),
+  completedAt: isoUtcTimestampSchema.nullable(),
 });
 
 export type ProcessingJob = z.infer<typeof processingJobSchema>;

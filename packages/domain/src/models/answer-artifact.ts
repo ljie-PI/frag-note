@@ -3,7 +3,7 @@ import { citationSchema } from './citation';
 
 export const queryTypeSchema = z.enum(['keyword', 'natural_language']);
 
-export const answerArtifactSchema = z.object({
+export const answerArtifactSchema = z.strictObject({
   answerId: z.string().uuid(),
   queryText: z.string(),
   queryType: queryTypeSchema,

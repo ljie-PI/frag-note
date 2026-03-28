@@ -5,4 +5,5 @@ export * from './models/derived-artifact';
 export * from './models/derived-object';
 export * from './models/fragment';
 export * from './models/processing-job';
+export * from './models/primitives';
 export * from './models/relation';

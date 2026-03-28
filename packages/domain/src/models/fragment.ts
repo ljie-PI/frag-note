@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { isoUtcTimestampSchema } from './primitives';
 
 export const sourceTypeSchema = z.enum([
   'text',
@@ -15,10 +16,10 @@ export const originKindSchema = z.enum([
   'answer_promotion',
 ]);
 
-export const fragmentSchema = z.object({
+export const fragmentSchema = z.strictObject({
   fragmentId: z.string().uuid(),
   userId: z.string().uuid(),
-  createdAt: z.string(),
+  createdAt: isoUtcTimestampSchema,
   sourceType: sourceTypeSchema,
   originKind: originKindSchema,
   titleOptional: z.string().nullable().optional(),
@@ -32,7 +33,7 @@ export const fragmentSchema = z.object({
     'ready',
     'failed',
   ]),
-  deviceMetadata: z.object({
+  deviceMetadata: z.strictObject({
     platform: z.string(),
     captureMethod: z.string(),
     appVersion: z.string().optional(),

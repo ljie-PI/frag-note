@@ -44,6 +44,31 @@ describe('search contracts', () => {
     );
   });
 
+  it('rejects undeclared query and result fields', () => {
+    expect(() =>
+      searchQueryContractSchema.parse({
+        queryText: seedAnswer.queryText,
+        queryType: seedAnswer.queryType,
+        debug: true,
+      }),
+    ).toThrow();
+
+    expect(() =>
+      searchResultContractSchema.parse({
+        objectId: seedCandidate.objectId,
+        objectType: 'derived_object',
+        score: 0.91,
+        citations: [
+          {
+            fragmentId: seedFragments.topicCluster[0].fragmentId,
+            locator: seedDerivedArtifact.citations[0].locator,
+            debug: true,
+          },
+        ],
+      }),
+    ).toThrow();
+  });
+
   it('rejects unknown result object types', () => {
     expect(() =>
       searchResultContractSchema.parse({

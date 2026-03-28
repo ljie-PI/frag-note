@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { isoUtcTimestampSchema } from './primitives';
 
 export const relationObjectTypeSchema = z.enum([
   'fragment',
@@ -7,7 +8,7 @@ export const relationObjectTypeSchema = z.enum([
   'answer',
 ]);
 
-export const relationSchema = z.object({
+export const relationSchema = z.strictObject({
   relationId: z.string().uuid(),
   sourceObjectType: relationObjectTypeSchema,
   sourceObjectId: z.string().uuid(),
@@ -16,7 +17,7 @@ export const relationSchema = z.object({
   relationType: z.string(),
   confidence: z.number(),
   explanation: z.string(),
-  createdAt: z.string(),
+  createdAt: isoUtcTimestampSchema,
   algorithmVersion: z.string().optional(),
 });
 

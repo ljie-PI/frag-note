@@ -1,11 +1,39 @@
 import { z } from 'zod';
 
-export const citationLocatorSchema = z.object({
-  kind: z.enum(['text_span', 'pdf_page', 'transcript_range', 'image_region']),
-  value: z.string(),
+const textSpanLocatorSchema = z.strictObject({
+  kind: z.literal('text_span'),
+  value: z
+    .string()
+    .regex(/^\d+:\d+$/, 'Expected `start:end` character offsets'),
 });
 
-export const citationSchema = z.object({
+const pdfPageLocatorSchema = z.strictObject({
+  kind: z.literal('pdf_page'),
+  value: z.string().regex(/^[1-9]\d*$/, 'Expected a 1-based PDF page number'),
+});
+
+const transcriptRangeLocatorSchema = z.strictObject({
+  kind: z.literal('transcript_range'),
+  value: z
+    .string()
+    .regex(/^\d+:\d+-\d+:\d+$/, 'Expected `start:end-start:end` transcript offsets'),
+});
+
+const imageRegionLocatorSchema = z.strictObject({
+  kind: z.literal('image_region'),
+  value: z
+    .string()
+    .regex(/^\d+,\d+,\d+,\d+$/, 'Expected `x,y,width,height` image coordinates'),
+});
+
+export const citationLocatorSchema = z.discriminatedUnion('kind', [
+  textSpanLocatorSchema,
+  pdfPageLocatorSchema,
+  transcriptRangeLocatorSchema,
+  imageRegionLocatorSchema,
+]);
+
+export const citationSchema = z.strictObject({
   fragmentId: z.string().uuid(),
   artifactId: z.string().uuid().optional(),
   locator: citationLocatorSchema,

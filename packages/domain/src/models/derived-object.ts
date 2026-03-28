@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { citationSchema } from './citation';
 
-export const derivedObjectSchema = z.object({
+export const derivedObjectSchema = z.strictObject({
   objectId: z.string().uuid(),
   objectType: z.enum(['topic', 'project', 'entity']),
   status: z.enum(['candidate', 'confirmed', 'dismissed', 'postponed']),

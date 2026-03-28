@@ -6,6 +6,6 @@ export const fragmentContractSchema = fragmentSchema.pick({
   userId: true,
   sourceType: true,
   originKind: true,
-});
+}).strict();
 
 export type FragmentContract = z.infer<typeof fragmentContractSchema>;
