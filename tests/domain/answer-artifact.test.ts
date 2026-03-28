@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import { answerArtifactSchema } from '../../packages/domain/src/index';
+import { answerArtifactSchema } from '../../packages/domain/src/index.ts';
 import { seedAnswer, seedFragments } from '@sui-note/testing';
 
 describe('answerArtifactSchema', () => {

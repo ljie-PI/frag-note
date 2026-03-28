@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import { processingJobSchema } from '../../packages/domain/src/index';
+import { processingJobSchema } from '../../packages/domain/src/index.ts';
 
 describe('processingJobSchema', () => {
   it('captures lifecycle state for processing jobs', () => {

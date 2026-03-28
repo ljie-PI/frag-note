@@ -8,7 +8,7 @@ import {
   fragmentSchema,
   processingJobSchema,
   relationSchema,
-} from '../../packages/domain/src/index';
+} from '../../packages/domain/src/index.ts';
 import {
   seedAnswer,
   seedAsset,

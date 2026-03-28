@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { isoUtcTimestampSchema } from './primitives';
+import { isoUtcTimestampSchema } from './primitives.ts';
 
 export const sourceTypeSchema = z.enum([
   'text',

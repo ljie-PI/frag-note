@@ -2,7 +2,7 @@ import { describe, expect, it } from 'bun:test';
 import {
   citationSchema,
   derivedArtifactSchema,
-} from '../../packages/domain/src/index';
+} from '../../packages/domain/src/index.ts';
 
 describe('derivedArtifactSchema', () => {
   it('accepts canonical artifact records with citations', () => {

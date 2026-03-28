@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test';
 import { fragmentSchema } from '@sui-note/domain';
-import { fragmentContractSchema } from '../../packages/contracts/src/fragments';
+import { fragmentContractSchema } from '../../packages/contracts/src/fragments.ts';
 import { seedFragments } from '@sui-note/testing';
 
 describe('fragmentContractSchema', () => {
