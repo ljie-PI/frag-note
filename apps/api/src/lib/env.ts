@@ -35,17 +35,6 @@ function requiredUrl(allowedProtocols: string[]): FieldParser<string> {
   };
 }
 
-function optionalUrl(
-  allowedProtocols: string[],
-  defaultValue: string,
-): FieldParser<string> {
-  return (name, value) => {
-    const normalizedValue = optionalString(defaultValue)(name, value);
-    assertAllowedUrl(name, normalizedValue, allowedProtocols);
-    return normalizedValue;
-  };
-}
-
 function requiredString(): FieldParser<string> {
   return (name, value) => {
     if (typeof value !== 'string' || value.trim() === '') {
