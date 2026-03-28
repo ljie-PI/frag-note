@@ -11,6 +11,15 @@ import {
 } from '@sui-note/testing';
 
 describe('search contracts', () => {
+  it('limits result object types to the search surface', () => {
+    expect(searchResultContractSchema.shape.objectType.options).toEqual([
+      'fragment',
+      'artifact',
+      'derived_object',
+      'answer',
+    ]);
+  });
+
   it('accepts canonical query and result payloads', () => {
     const query = searchQueryContractSchema.parse({
       queryText: seedAnswer.queryText,

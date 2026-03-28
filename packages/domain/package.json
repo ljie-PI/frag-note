@@ -15,7 +15,6 @@
     "zod": "^4.1.11"
   },
   "devDependencies": {
-    "@sui-note/contracts": "workspace:*",
     "@sui-note/testing": "workspace:*",
     "vitest": "^3.2.0"
   }

@@ -5,7 +5,7 @@ export const processingJobSchema = z.object({
   fragmentId: z.string().uuid(),
   jobType: z.string(),
   status: z.enum(['queued', 'running', 'failed', 'completed']),
-  attemptCount: z.number().int(),
+  attemptCount: z.number().int().nonnegative(),
   provider: z.string(),
   errorCode: z.string().nullable(),
   errorMessage: z.string().nullable(),
