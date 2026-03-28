@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
-import { buildApp } from '../../app.js';
+import { describe, expect, it } from 'bun:test';
+import { buildApp } from '../../../apps/api/src/app.js';
 
 describe('POST /v1/auth/device-session', () => {
   it('returns 201 with a new user and device session identity', async () => {

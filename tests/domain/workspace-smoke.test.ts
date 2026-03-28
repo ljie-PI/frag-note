@@ -1,12 +1,14 @@
+import { describe, expect, it } from 'bun:test';
 import { execFileSync } from 'node:child_process';
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { dirname, resolve } from 'node:path';
-import { describe, expect, it } from 'vitest';
 
 const testDir = dirname(fileURLToPath(import.meta.url));
-const domainEntryUrl = pathToFileURL(resolve(testDir, '../index.ts')).href;
-const repoRoot = resolve(testDir, '../../../..');
+const domainEntryUrl = pathToFileURL(
+  resolve(testDir, '../../packages/domain/src/index.ts'),
+).href;
+const repoRoot = resolve(testDir, '../..');
 
 function collectTypeScriptFiles(dir: string): string[] {
   const entries = readdirSync(dir).sort();

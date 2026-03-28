@@ -1,11 +1,11 @@
+import { describe, expect, it } from 'bun:test';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { dirname, resolve } from 'node:path';
-import { describe, expect, it } from 'vitest';
 import {
   searchQueryContractSchema,
   searchResultContractSchema,
-} from '../search.ts';
+} from '../../packages/contracts/src/search.ts';
 import {
   seedAnswer,
   seedCandidate,
@@ -14,7 +14,9 @@ import {
 } from '@sui-note/testing';
 
 const testDir = dirname(fileURLToPath(import.meta.url));
-const searchEntryUrl = pathToFileURL(resolve(testDir, '../search.ts')).href;
+const searchEntryUrl = pathToFileURL(
+  resolve(testDir, '../../packages/contracts/src/search.ts'),
+).href;
 
 describe('search contracts', () => {
   it('loads the raw TypeScript search contract entrypoint with native Node ESM resolution', () => {
@@ -28,7 +30,7 @@ describe('search contracts', () => {
           searchEntryUrl,
         ],
         {
-          cwd: resolve(testDir, '../../..'),
+          cwd: resolve(testDir, '../..'),
           stdio: 'pipe',
         },
       ),

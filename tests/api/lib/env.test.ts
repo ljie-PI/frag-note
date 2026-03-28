@@ -1,8 +1,8 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'bun:test';
 
 describe('parseEnv', () => {
   it('requires database and redis configuration', async () => {
-    const { parseEnv } = await import('../env.js');
+    const { parseEnv } = await import('../../../apps/api/src/lib/env.js');
 
     expect(
       parseEnv({

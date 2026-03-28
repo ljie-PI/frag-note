@@ -1,11 +1,11 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'bun:test';
 import { getTableName } from 'drizzle-orm';
 import { getTableConfig } from 'drizzle-orm/pg-core';
 import {
   deviceSessionsTable,
   fragmentsTable,
   usersTable,
-} from '../schema.js';
+} from '../../../apps/api/src/db/schema.js';
 
 describe('schema exports', () => {
   it('exports drizzle table definitions for fragments and auth tables', () => {

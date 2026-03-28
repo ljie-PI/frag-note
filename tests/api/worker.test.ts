@@ -1,5 +1,5 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
-import { runWorker } from '../worker.js';
+import { afterEach, describe, expect, it, vi } from 'bun:test';
+import { runWorker } from '../../apps/api/src/worker.js';
 
 afterEach(() => {
   vi.restoreAllMocks();
