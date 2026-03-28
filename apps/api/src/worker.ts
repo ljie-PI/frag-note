@@ -1,7 +1,39 @@
 import { fileURLToPath } from 'node:url';
 
-export async function runWorker(): Promise<void> {
-  throw new Error('Worker loop is not implemented yet.');
+type RunWorkerOptions = {
+  signal?: AbortSignal;
+};
+
+export async function runWorker(
+  options: RunWorkerOptions = {},
+): Promise<void> {
+  console.info('Worker shell started');
+
+  if (options.signal?.aborted) {
+    return;
+  }
+
+  await new Promise<void>((resolve) => {
+    const cleanup = () => {
+      options.signal?.removeEventListener('abort', handleAbort);
+      process.off('SIGINT', handleSignal);
+      process.off('SIGTERM', handleSignal);
+    };
+
+    const handleAbort = () => {
+      cleanup();
+      resolve();
+    };
+
+    const handleSignal = () => {
+      cleanup();
+      resolve();
+    };
+
+    options.signal?.addEventListener('abort', handleAbort, { once: true });
+    process.once('SIGINT', handleSignal);
+    process.once('SIGTERM', handleSignal);
+  });
 }
 
 function isMainModule(metaUrl: string): boolean {
