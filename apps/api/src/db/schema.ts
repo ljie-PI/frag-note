@@ -12,3 +12,4 @@ export const fragmentsTable = pgTable('fragments', {
 });
 
 export * from './schema-auth.js';
+export * from './schema-derived-objects.js';

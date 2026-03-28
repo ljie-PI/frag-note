@@ -23,6 +23,8 @@ describe('derivedObjectSchema', () => {
       ],
       relationEdges: ['55555555-5555-4555-8555-555555555555'],
       ruleVersion: 'v1',
+      createdAt: '2026-03-28T10:06:00.000Z',
+      updatedAt: '2026-03-28T10:06:00.000Z',
     });
 
     expect(parsed.status).toBe('candidate');

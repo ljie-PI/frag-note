@@ -7,10 +7,15 @@ describe('answerArtifactSchema', () => {
     const answer = answerArtifactSchema.parse(seedAnswer);
 
     expect(answer.queryType).toBe('natural_language');
+    expect(answer.answerBody).toContain('OCR');
     expect(answer.citations[0]?.fragmentId).toBe(
       seedFragments.topicCluster[0].fragmentId,
     );
     expect(answer.retrievalBundle).toEqual(seedAnswer.retrievalBundle);
+    expect(answer.provenance.citedFragmentIds).toEqual(
+      seedAnswer.provenance.citedFragmentIds,
+    );
+    expect(answer.savedAsFragment).toBe(false);
   });
 
   it('rejects non-uuid retrieval bundle entries', () => {
