@@ -3,6 +3,7 @@
   "private": true,
   "type": "module",
   "exports": {
+    "./auth": "./src/auth.ts",
     "./fragments": "./src/fragments.ts",
     "./search": "./src/search.ts"
   },
