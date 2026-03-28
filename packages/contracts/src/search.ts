@@ -1,26 +1,23 @@
 import { z } from 'zod';
+import {
+  answerArtifactSchema,
+  citationLocatorSchema,
+  relationObjectTypeSchema,
+} from '@sui-note/domain';
 
 export const searchQueryContractSchema = z.object({
   queryText: z.string(),
-  queryType: z.enum(['keyword', 'natural_language']),
+  queryType: answerArtifactSchema.shape.queryType,
 });
 
 export const searchResultContractSchema = z.object({
   objectId: z.string().uuid(),
-  objectType: z.enum(['fragment', 'artifact', 'derived_object', 'answer']),
+  objectType: relationObjectTypeSchema,
   score: z.number(),
   citations: z.array(
     z.object({
       fragmentId: z.string().uuid(),
-      locator: z.object({
-        kind: z.enum([
-          'text_span',
-          'pdf_page',
-          'transcript_range',
-          'image_region',
-        ]),
-        value: z.string(),
-      }),
+      locator: citationLocatorSchema,
     }),
   ),
 });

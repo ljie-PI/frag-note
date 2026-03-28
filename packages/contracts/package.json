@@ -12,6 +12,7 @@
     "lint": "node -e \"process.exit(0)\""
   },
   "dependencies": {
+    "@sui-note/domain": "workspace:*",
     "zod": "^4.1.11"
   }
 }
