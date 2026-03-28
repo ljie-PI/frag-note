@@ -24,4 +24,20 @@ describe('POST /v1/auth/device-session', () => {
 
     await app.close();
   });
+
+  it('rejects unexpected request body fields', async () => {
+    const app = buildApp();
+
+    const response = await app.inject({
+      method: 'POST',
+      url: '/v1/auth/device-session',
+      payload: {
+        unexpected: true,
+      },
+    });
+
+    expect(response.statusCode).toBe(400);
+
+    await app.close();
+  });
 });

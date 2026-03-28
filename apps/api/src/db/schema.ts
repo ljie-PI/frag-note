@@ -10,3 +10,5 @@ export const fragmentsTable = pgTable('fragments', {
     mode: 'string',
   }).notNull(),
 });
+
+export * from './schema-auth.js';

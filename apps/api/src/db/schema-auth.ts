@@ -10,7 +10,9 @@ export const usersTable = pgTable('users', {
 
 export const deviceSessionsTable = pgTable('device_sessions', {
   deviceSessionId: uuid('device_session_id').primaryKey(),
-  userId: uuid('user_id').notNull(),
+  userId: uuid('user_id')
+    .notNull()
+    .references(() => usersTable.userId),
   createdAt: timestamp('created_at', {
     withTimezone: true,
     mode: 'string',
