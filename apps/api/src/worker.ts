@@ -1,7 +1,7 @@
 import { fileURLToPath } from 'node:url';
 
 export async function runWorker(): Promise<void> {
-  console.info('Worker shell started');
+  throw new Error('Worker loop is not implemented yet.');
 }
 
 function isMainModule(metaUrl: string): boolean {

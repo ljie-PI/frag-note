@@ -25,9 +25,13 @@ function parsePort(value: string | undefined): number {
     return DEFAULT_PORT;
   }
 
-  const parsedValue = Number.parseInt(value, 10);
+  if (!/^\d+$/.test(value)) {
+    throw new Error('PORT must be a valid integer');
+  }
 
-  if (Number.isNaN(parsedValue)) {
+  const parsedValue = Number(value);
+
+  if (!Number.isSafeInteger(parsedValue)) {
     throw new Error('PORT must be a valid integer');
   }
 

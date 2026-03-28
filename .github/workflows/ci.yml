@@ -1,4 +1,4 @@
-name: CI
+name: API Shell CI
 
 on:
   pull_request:
@@ -27,7 +27,7 @@ jobs:
         run: pnpm install --no-frozen-lockfile
 
       - name: Test API
-        run: pnpm --filter @sui-note/api test -- src/routes/__tests__/health.test.ts
+        run: pnpm --filter @sui-note/api test:health
 
       - name: Build API
         run: pnpm --filter @sui-note/api build
