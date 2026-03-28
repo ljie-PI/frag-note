@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   answerArtifactSchema,
+  assetSchema,
   derivedArtifactSchema,
   derivedObjectSchema,
   fragmentSchema,
@@ -11,6 +12,7 @@ import {
 describe('domain models', () => {
   it('exports the full fragment-first object family', () => {
     expect(fragmentSchema.shape.fragmentId).toBeDefined();
+    expect(assetSchema.shape.assetId).toBeDefined();
     expect(derivedArtifactSchema.shape.citations).toBeDefined();
     expect(derivedObjectSchema.shape.supportingFragmentIds).toBeDefined();
     expect(processingJobSchema.shape.jobType).toBeDefined();
