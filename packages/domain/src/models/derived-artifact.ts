@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import { citationSchema } from './citation';
-import { isoUtcTimestampSchema } from './primitives';
+import { citationSchema } from './citation.ts';
+import { isoUtcTimestampSchema } from './primitives.ts';
 
 export const derivedArtifactSchema = z.strictObject({
   artifactId: z.string().uuid(),

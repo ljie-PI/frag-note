@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { processingJobSchema } from '../index';
+import { processingJobSchema } from '../index.ts';
 
 describe('processingJobSchema', () => {
   it('captures lifecycle state for processing jobs', () => {

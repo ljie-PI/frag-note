@@ -8,7 +8,7 @@ import {
   fragmentSchema,
   processingJobSchema,
   relationSchema,
-} from '../index';
+} from '../index.ts';
 import {
   seedCandidate,
   seedAnswer,

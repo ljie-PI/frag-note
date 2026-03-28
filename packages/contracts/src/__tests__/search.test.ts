@@ -1,8 +1,11 @@
+import { execFileSync } from 'node:child_process';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+import { dirname, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
   searchQueryContractSchema,
   searchResultContractSchema,
-} from '../search';
+} from '../search.ts';
 import {
   seedAnswer,
   seedCandidate,
@@ -10,7 +13,28 @@ import {
   seedFragments,
 } from '@sui-note/testing';
 
+const testDir = dirname(fileURLToPath(import.meta.url));
+const searchEntryUrl = pathToFileURL(resolve(testDir, '../search.ts')).href;
+
 describe('search contracts', () => {
+  it('loads the raw TypeScript search contract entrypoint with native Node ESM resolution', () => {
+    expect(() =>
+      execFileSync(
+        process.execPath,
+        [
+          '--input-type=module',
+          '-e',
+          "import(process.argv[1]).catch((error) => { console.error(error); process.exit(1); })",
+          searchEntryUrl,
+        ],
+        {
+          cwd: resolve(testDir, '../../..'),
+          stdio: 'pipe',
+        },
+      ),
+    ).not.toThrow();
+  });
+
   it('limits result object types to the search surface', () => {
     expect(searchResultContractSchema.shape.objectType.options).toEqual([
       'fragment',

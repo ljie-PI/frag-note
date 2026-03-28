@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { fragmentSchema } from '@sui-note/domain';
-import { fragmentContractSchema } from '../fragments';
+import { fragmentContractSchema } from '../fragments.ts';
 import { seedFragments } from '@sui-note/testing';
 
 describe('fragmentContractSchema', () => {

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { citationSchema } from './citation';
+import { citationSchema } from './citation.ts';
 
 export const queryTypeSchema = z.enum(['keyword', 'natural_language']);
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { derivedObjectSchema } from '../index';
+import { derivedObjectSchema } from '../index.ts';
 
 describe('derivedObjectSchema', () => {
   it('tracks supporting fragments, citations, and relation edges', () => {
