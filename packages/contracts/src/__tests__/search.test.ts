@@ -1,0 +1,48 @@
+import { describe, expect, it } from 'vitest';
+import {
+  searchQueryContractSchema,
+  searchResultContractSchema,
+} from '../search';
+import {
+  seedAnswer,
+  seedCandidate,
+  seedDerivedArtifact,
+  seedFragments,
+} from '@sui-note/testing';
+
+describe('search contracts', () => {
+  it('accepts canonical query and result payloads', () => {
+    const query = searchQueryContractSchema.parse({
+      queryText: seedAnswer.queryText,
+      queryType: seedAnswer.queryType,
+    });
+
+    const result = searchResultContractSchema.parse({
+      objectId: seedCandidate.objectId,
+      objectType: 'derived_object',
+      score: 0.91,
+      citations: [
+        {
+          fragmentId: seedFragments.topicCluster[0].fragmentId,
+          locator: seedDerivedArtifact.citations[0].locator,
+        },
+      ],
+    });
+
+    expect(query.queryType).toBe('natural_language');
+    expect(result.citations[0].fragmentId).toBe(
+      seedFragments.topicCluster[0].fragmentId,
+    );
+  });
+
+  it('rejects unknown result object types', () => {
+    expect(() =>
+      searchResultContractSchema.parse({
+        objectId: seedCandidate.objectId,
+        objectType: 'project',
+        score: 0.91,
+        citations: [],
+      }),
+    ).toThrow();
+  });
+});

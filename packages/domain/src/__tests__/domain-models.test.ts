@@ -9,11 +9,13 @@ import {
   relationSchema,
 } from '../index';
 import {
+  seedCandidate,
   seedAsset,
   seedDerivedArtifact,
+  seedFragments,
   seedProcessingJob,
   seedRelation,
-} from '../../../testing/src';
+} from '@sui-note/testing';
 
 describe('domain models', () => {
   it('exports the full fragment-first object family', () => {
@@ -49,11 +51,19 @@ describe('domain models', () => {
   });
 
   it('parses canonical shared asset and pipeline fixtures', () => {
+    const fragments = seedFragments.topicCluster.map((fragment) =>
+      fragmentSchema.parse(fragment),
+    );
+    const candidate = derivedObjectSchema.parse(seedCandidate);
     const asset = assetSchema.parse(seedAsset);
     const artifact = derivedArtifactSchema.parse(seedDerivedArtifact);
     const relation = relationSchema.parse(seedRelation);
     const job = processingJobSchema.parse(seedProcessingJob);
 
+    expect(fragments).toHaveLength(3);
+    expect(candidate.supportingFragmentIds).toContain(
+      seedFragments.topicCluster[0].fragmentId,
+    );
     expect(asset.storagePath.bucket).toBe('captures');
     expect(asset.fileNameOptional).toBe('ocr-research.png');
     expect(artifact.version).toBe('2026-03-28.1');

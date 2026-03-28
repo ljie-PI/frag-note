@@ -8,11 +8,15 @@
   },
   "scripts": {
     "build": "node -e \"process.exit(0)\"",
-    "test": "node -e \"process.exit(0)\"",
+    "test": "vitest run",
     "lint": "node -e \"process.exit(0)\""
   },
   "dependencies": {
     "@sui-note/domain": "workspace:*",
     "zod": "^4.1.11"
+  },
+  "devDependencies": {
+    "@sui-note/testing": "workspace:*",
+    "vitest": "^3.2.0"
   }
 }
