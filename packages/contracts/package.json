@@ -2,9 +2,16 @@
   "name": "@sui-note/contracts",
   "private": true,
   "type": "module",
+  "exports": {
+    "./fragments": "./src/fragments.ts",
+    "./search": "./src/search.ts"
+  },
   "scripts": {
     "build": "node -e \"process.exit(0)\"",
     "test": "node -e \"process.exit(0)\"",
     "lint": "node -e \"process.exit(0)\""
+  },
+  "dependencies": {
+    "zod": "^4.1.11"
   }
 }

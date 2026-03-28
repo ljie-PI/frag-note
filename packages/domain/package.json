@@ -11,6 +11,9 @@
     "test": "vitest run",
     "lint": "node -e \"process.exit(0)\""
   },
+  "dependencies": {
+    "zod": "^4.1.11"
+  },
   "devDependencies": {
     "vitest": "^3.2.0"
   }
