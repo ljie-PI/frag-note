@@ -59,9 +59,7 @@ export function App() {
     action: 'confirm' | 'dismiss' | 'postpone',
   ) => {
     try {
-      await fetch(`http://127.0.0.1:3000/v1/derived-objects/${candidate.objectId}/${action}`, {
-        method: 'POST',
-      });
+      await apiClient.reviewCandidate(candidate.objectId, action);
     } finally {
       await refresh();
     }

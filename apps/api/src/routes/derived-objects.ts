@@ -1,26 +1,13 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import type { AppState } from '../services/app-state.js';
-import {
-  mergeDerivedObjects,
-} from '../services/derived-object-merge.js';
-import {
-  getDerivedObjectDetail,
-  listDerivedObjectCandidates,
-} from '../services/derived-object-query.js';
-import {
-  confirmDerivedObject,
-  dismissDerivedObject,
-  postponeDerivedObject,
-} from '../services/derived-object-review.js';
-import { reviewDerivedObjectUpdates } from '../services/derived-object-update-review.js';
+import type { ApiRuntime } from '../runtime/runtime.js';
 
 export function registerDerivedObjectRoutes(
   app: FastifyInstance,
-  state: AppState,
+  runtime: ApiRuntime,
 ) {
   app.get('/v1/derived-objects/candidates', async () =>
-    listDerivedObjectCandidates(state),
+    runtime.listDerivedObjectCandidates(),
   );
 
   app.get('/v1/derived-objects/:id', async (request, reply) => {
@@ -31,7 +18,7 @@ export function registerDerivedObjectRoutes(
       return { error: 'Invalid object id' };
     }
 
-    const candidate = getDerivedObjectDetail(state, params.data.id);
+    const candidate = await runtime.getDerivedObjectDetail(params.data.id);
 
     if (!candidate) {
       reply.code(404);
@@ -44,15 +31,15 @@ export function registerDerivedObjectRoutes(
   for (const action of [
     {
       path: 'confirm',
-      handler: confirmDerivedObject,
+      action: 'confirm',
     },
     {
       path: 'dismiss',
-      handler: dismissDerivedObject,
+      action: 'dismiss',
     },
     {
       path: 'postpone',
-      handler: postponeDerivedObject,
+      action: 'postpone',
     },
   ] as const) {
     app.post(`/v1/derived-objects/:id/${action.path}`, async (request, reply) => {
@@ -63,7 +50,10 @@ export function registerDerivedObjectRoutes(
         return { error: 'Invalid object id' };
       }
 
-      const candidate = action.handler(state, params.data.id);
+      const candidate = await runtime.reviewDerivedObject(
+        params.data.id,
+        action.action,
+      );
 
       if (!candidate) {
         reply.code(404);
@@ -82,7 +72,7 @@ export function registerDerivedObjectRoutes(
       return { error: 'Invalid object id' };
     }
 
-    return reviewDerivedObjectUpdates(state, params.data.id);
+    return runtime.reviewDerivedObjectUpdates(params.data.id);
   });
 
   app.post('/v1/derived-objects/:id/merge', async (request, reply) => {
@@ -94,7 +84,10 @@ export function registerDerivedObjectRoutes(
       return { error: 'Invalid merge request' };
     }
 
-    const merged = mergeDerivedObjects(state, params.data.id, body.data.targetId);
+    const merged = await runtime.mergeDerivedObjects(
+      params.data.id,
+      body.data.targetId,
+    );
 
     if (!merged) {
       reply.code(404);
