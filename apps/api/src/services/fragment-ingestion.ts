@@ -174,7 +174,14 @@ function extractAssets(fragmentId: string, rawText: string | null): Asset[] {
 
   try {
     const parsed = JSON.parse(rawText) as {
-      assets?: Array<{ fileName: string; localPath: string; mimeType: string }>;
+      assets?: Array<{
+        fileName: string;
+        localPath?: string;
+        storageKey?: string;
+        storageBucket?: string;
+        mimeType: string;
+        byteSize?: number;
+      }>;
     };
 
     if (!Array.isArray(parsed.assets)) {
@@ -187,12 +194,12 @@ function extractAssets(fragmentId: string, rawText: string | null): Asset[] {
       assetType: 'attachment',
       mimeType: asset.mimeType,
       storagePath: {
-        bucket: 'desktop-local',
-        key: asset.localPath,
+        bucket: asset.storageBucket ?? 'desktop-local',
+        key: asset.storageKey ?? asset.localPath ?? asset.fileName,
       },
       fileNameOptional: asset.fileName,
       checksum: null,
-      byteSize: 0,
+      byteSize: asset.byteSize ?? 0,
       createdAt: new Date().toISOString(),
     }));
   } catch {

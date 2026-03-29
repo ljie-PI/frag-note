@@ -3,9 +3,14 @@ import {
   createDeviceSessionRequestSchema,
   createDeviceSessionResponseSchema,
 } from '@sui-note/contracts/auth';
+import type { AuthResolver } from '../lib/request-auth.js';
 import type { ApiRuntime } from '../runtime/runtime.js';
 
-export function registerAuthRoute(app: FastifyInstance, runtime: ApiRuntime) {
+export function registerAuthRoute(
+  app: FastifyInstance,
+  runtime: ApiRuntime,
+  authResolver: AuthResolver,
+) {
   app.post('/v1/auth/device-session', async (request, reply) => {
     const parsedRequest = createDeviceSessionRequestSchema.safeParse(
       request.body,
@@ -20,8 +25,9 @@ export function registerAuthRoute(app: FastifyInstance, runtime: ApiRuntime) {
 
     reply.code(201);
 
+    const auth = await authResolver(request);
     return createDeviceSessionResponseSchema.parse(
-      await runtime.createDeviceSession(),
+      await runtime.createDeviceSession(auth),
     );
   });
 }

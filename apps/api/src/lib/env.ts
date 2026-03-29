@@ -12,6 +12,11 @@ export type ParsedEnv = {
   };
   ai: {
     openAiApiKey: string | null;
+    openAiBaseUrl: string;
+    summaryModel: string;
+    embeddingModel: string;
+    transcriptionModel: string;
+    ocrModel: string;
   };
 };
 
@@ -24,6 +29,11 @@ const envSchema = {
   SUPABASE_STORAGE_RAW_BUCKET: optionalString('captures-raw'),
   SUPABASE_STORAGE_DERIVED_BUCKET: optionalString('captures-derived'),
   OPENAI_API_KEY: nullableString(),
+  OPENAI_BASE_URL: optionalUrl('https://api.openai.com/v1', ['https:', 'http:']),
+  OPENAI_SUMMARY_MODEL: optionalString('gpt-4.1-mini'),
+  OPENAI_EMBEDDING_MODEL: optionalString('text-embedding-3-small'),
+  OPENAI_TRANSCRIPTION_MODEL: optionalString('gpt-4o-mini-transcribe'),
+  OPENAI_OCR_MODEL: optionalString('gpt-4.1-mini'),
 } satisfies Record<string, FieldParser<unknown>>;
 
 export function parseEnv(input: EnvInput = process.env): ParsedEnv {
@@ -53,6 +63,26 @@ export function parseEnv(input: EnvInput = process.env): ParsedEnv {
       openAiApiKey: envSchema.OPENAI_API_KEY(
         'OPENAI_API_KEY',
         input.OPENAI_API_KEY,
+      ),
+      openAiBaseUrl: envSchema.OPENAI_BASE_URL(
+        'OPENAI_BASE_URL',
+        input.OPENAI_BASE_URL,
+      ),
+      summaryModel: envSchema.OPENAI_SUMMARY_MODEL(
+        'OPENAI_SUMMARY_MODEL',
+        input.OPENAI_SUMMARY_MODEL,
+      ),
+      embeddingModel: envSchema.OPENAI_EMBEDDING_MODEL(
+        'OPENAI_EMBEDDING_MODEL',
+        input.OPENAI_EMBEDDING_MODEL,
+      ),
+      transcriptionModel: envSchema.OPENAI_TRANSCRIPTION_MODEL(
+        'OPENAI_TRANSCRIPTION_MODEL',
+        input.OPENAI_TRANSCRIPTION_MODEL,
+      ),
+      ocrModel: envSchema.OPENAI_OCR_MODEL(
+        'OPENAI_OCR_MODEL',
+        input.OPENAI_OCR_MODEL,
       ),
     },
   };
@@ -91,6 +121,17 @@ function optionalString(defaultValue: string): FieldParser<string> {
     }
 
     return value;
+  };
+}
+
+function optionalUrl(
+  defaultValue: string,
+  allowedProtocols: string[],
+): FieldParser<string> {
+  return (name, value) => {
+    const normalizedValue = optionalString(defaultValue)(name, value);
+    assertAllowedUrl(name, normalizedValue, allowedProtocols);
+    return normalizedValue;
   };
 }
 

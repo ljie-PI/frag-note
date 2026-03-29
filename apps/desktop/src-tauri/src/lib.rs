@@ -17,6 +17,7 @@ pub fn run() {
             commands::storage::get_fragment_record,
             commands::storage::create_screenshot_placeholder,
             commands::storage::create_voice_placeholder,
+            commands::storage::read_local_asset_base64,
             commands::shortcuts::register_capture_shortcut,
             commands::shortcuts::current_capture_shortcut,
         ])

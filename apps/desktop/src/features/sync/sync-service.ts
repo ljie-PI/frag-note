@@ -21,6 +21,10 @@ export type DesktopApiClient = {
     relatedFragments: Relation[];
     processingJobs: ProcessingJob[];
   }>;
+  retryFragmentProcessing(fragmentId: string): Promise<{
+    fragmentId: string;
+    status: 'processing';
+  }>;
 };
 
 export function createSyncService({
@@ -58,6 +62,11 @@ export function createSyncService({
         const detail = await apiClient.getFragmentDetail(record.fragment.fragmentId);
         await store.updateRecord(normalizeDetail(detail));
       }
+    },
+    async retryFailedFragment(fragmentId: string) {
+      await apiClient.retryFragmentProcessing(fragmentId);
+      const detail = await apiClient.getFragmentDetail(fragmentId);
+      await store.updateRecord(normalizeDetail(detail));
     },
   };
 }

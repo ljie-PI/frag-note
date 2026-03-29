@@ -88,6 +88,14 @@ export const processingJobsTable = pgTable('processing_jobs', {
   payload: jsonb('payload').notNull(),
   errorCode: text('error_code'),
   errorMessage: text('error_message'),
+  claimedAt: timestamp('claimed_at', {
+    withTimezone: true,
+    mode: 'string',
+  }),
+  leaseExpiresAt: timestamp('lease_expires_at', {
+    withTimezone: true,
+    mode: 'string',
+  }),
   startedAt: timestamp('started_at', {
     withTimezone: true,
     mode: 'string',

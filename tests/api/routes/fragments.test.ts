@@ -1,10 +1,9 @@
 import { describe, expect, it } from 'bun:test';
-import { buildApp } from '../../../apps/api/src/app.js';
-import { createTestRuntime } from '../support/test-runtime.js';
+import { createTestApp } from '../support/test-app.js';
 
 describe('POST /v1/fragments', () => {
   it('creates a fragment, processing artifacts, and related-fragment links', async () => {
-    const app = buildApp({ runtime: createTestRuntime() });
+    const app = createTestApp();
 
     const firstResponse = await app.inject({
       method: 'POST',
@@ -57,6 +56,35 @@ describe('POST /v1/fragments', () => {
         }),
       ]),
     );
+
+    await app.close();
+  });
+
+  it('requeues failed fragments for processing', async () => {
+    const app = createTestApp();
+
+    const createResponse = await app.inject({
+      method: 'POST',
+      url: '/v1/fragments',
+      payload: {
+        sourceType: 'text',
+        rawText: 'Retry this failed fragment',
+        titleOptional: 'Retry me',
+      },
+    });
+
+    const fragmentId = createResponse.json().fragmentId as string;
+
+    const retryResponse = await app.inject({
+      method: 'POST',
+      url: `/v1/fragments/${fragmentId}/retry`,
+    });
+
+    expect(retryResponse.statusCode).toBe(202);
+    expect(retryResponse.json()).toEqual({
+      fragmentId,
+      status: 'processing',
+    });
 
     await app.close();
   });

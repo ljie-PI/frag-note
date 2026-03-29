@@ -24,6 +24,11 @@ describe('parseEnv', () => {
       },
       ai: {
         openAiApiKey: null,
+        openAiBaseUrl: 'https://api.openai.com/v1',
+        summaryModel: 'gpt-4.1-mini',
+        embeddingModel: 'text-embedding-3-small',
+        transcriptionModel: 'gpt-4o-mini-transcribe',
+        ocrModel: 'gpt-4.1-mini',
       },
     });
     expect(

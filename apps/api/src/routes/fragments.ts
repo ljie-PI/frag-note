@@ -1,5 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
+import type { AuthResolver } from '../lib/request-auth.js';
 import type { ApiRuntime } from '../runtime/runtime.js';
 
 const createFragmentRequestSchema = z.strictObject({
@@ -8,10 +9,17 @@ const createFragmentRequestSchema = z.strictObject({
   titleOptional: z.string().nullable().optional(),
 });
 
-export function registerFragmentRoutes(app: FastifyInstance, runtime: ApiRuntime) {
-  app.get('/v1/fragments', async () => ({
-    fragments: await runtime.listFragments(),
-  }));
+export function registerFragmentRoutes(
+  app: FastifyInstance,
+  runtime: ApiRuntime,
+  authResolver: AuthResolver,
+) {
+  app.get('/v1/fragments', async (request) => {
+    const auth = await authResolver(request);
+    return {
+      fragments: await runtime.listFragments(auth),
+    };
+  });
 
   app.get('/v1/fragments/:id', async (request, reply) => {
     const params = z.strictObject({ id: z.string().uuid() }).safeParse(request.params);
@@ -21,7 +29,8 @@ export function registerFragmentRoutes(app: FastifyInstance, runtime: ApiRuntime
       return { error: 'Invalid fragment id' };
     }
 
-    const detail = await runtime.getFragmentDetail(params.data.id);
+    const auth = await authResolver(request);
+    const detail = await runtime.getFragmentDetail(auth, params.data.id);
 
     if (!detail) {
       reply.code(404);
@@ -40,6 +49,27 @@ export function registerFragmentRoutes(app: FastifyInstance, runtime: ApiRuntime
     }
 
     reply.code(202);
-    return runtime.ingestFragment(parsedRequest.data);
+    const auth = await authResolver(request);
+    return runtime.ingestFragment(auth, parsedRequest.data);
+  });
+
+  app.post('/v1/fragments/:id/retry', async (request, reply) => {
+    const params = z.strictObject({ id: z.string().uuid() }).safeParse(request.params);
+
+    if (!params.success) {
+      reply.code(400);
+      return { error: 'Invalid fragment id' };
+    }
+
+    const auth = await authResolver(request);
+    const retried = await runtime.retryFragmentProcessing(auth, params.data.id);
+
+    if (!retried) {
+      reply.code(404);
+      return { error: 'Fragment not found' };
+    }
+
+    reply.code(202);
+    return retried;
   });
 }
