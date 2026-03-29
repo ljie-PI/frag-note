@@ -10,6 +10,8 @@ export const processingJobSchema = z.strictObject({
   provider: z.string(),
   errorCode: z.string().nullable(),
   errorMessage: z.string().nullable(),
+  claimedAt: isoUtcTimestampSchema.nullable(),
+  leaseExpiresAt: isoUtcTimestampSchema.nullable(),
   startedAt: isoUtcTimestampSchema.nullable(),
   completedAt: isoUtcTimestampSchema.nullable(),
 });

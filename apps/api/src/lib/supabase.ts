@@ -33,6 +33,9 @@ export type SupabaseChainClient = {
         body: Uint8Array,
         options?: { upsert?: boolean; contentType?: string },
       ): Promise<{ error: Error | null }>;
+      download(
+        key: string,
+      ): Promise<{ data: Uint8Array | null; error: Error | null }>;
     };
   };
 };
@@ -57,6 +60,7 @@ export function createSupabaseRuntimeClients(
 
 type QueryBuilder = {
   eq(column: string, value: QueryValue): QueryBuilder;
+  lt(column: string, value: QueryValue): QueryBuilder;
   in(column: string, values: QueryValue[]): QueryBuilder;
   or(expression: string): QueryBuilder;
   order(
@@ -151,6 +155,31 @@ function createChainClient(url: string, apiKey: string): SupabaseChainClient {
               return { error: normalizeError(error) };
             }
           },
+          async download(key) {
+            try {
+              const response = await fetch(
+                `${url}/storage/v1/object/${bucket}/${encodePath(key)}`,
+                {
+                  method: 'GET',
+                  headers,
+                },
+              );
+
+              if (!response.ok) {
+                throw new Error(await response.text());
+              }
+
+              return {
+                data: new Uint8Array(await response.arrayBuffer()),
+                error: null,
+              };
+            } catch (error) {
+              return {
+                data: null,
+                error: normalizeError(error),
+              };
+            }
+          },
         };
       },
     },
@@ -202,6 +231,10 @@ function createQueryBuilder(
     },
     eq(column: string, value: QueryValue) {
       filters.set(column, `eq.${String(value)}`);
+      return builder;
+    },
+    lt(column: string, value: QueryValue) {
+      filters.set(column, `lt.${String(value)}`);
       return builder;
     },
     in(column: string, values: QueryValue[]) {

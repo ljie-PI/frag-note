@@ -1,5 +1,6 @@
 use std::{fs, path::PathBuf};
 
+use base64::{engine::general_purpose::STANDARD, Engine as _};
 use rusqlite::{params, Connection};
 use tauri::{AppHandle, Manager};
 
@@ -60,6 +61,12 @@ pub fn create_screenshot_placeholder(app: AppHandle) -> Result<String, String> {
 #[tauri::command]
 pub fn create_voice_placeholder(app: AppHandle) -> Result<String, String> {
     create_placeholder_asset(&app, "placeholder-voice.webm", b"voice")
+}
+
+#[tauri::command]
+pub fn read_local_asset_base64(local_path: String) -> Result<String, String> {
+    let bytes = fs::read(local_path).map_err(|error| error.to_string())?;
+    Ok(STANDARD.encode(bytes))
 }
 
 fn create_placeholder_asset(

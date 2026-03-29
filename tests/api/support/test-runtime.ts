@@ -25,24 +25,33 @@ import {
   saveAnswerAsFragment,
   searchKnowledgeBase,
 } from '../../../apps/api/src/services/search-service.js';
+import type { AuthResolver } from '../../../apps/api/src/lib/request-auth.js';
 import type { ApiRuntime } from '../../../apps/api/src/runtime/runtime.js';
+
+const TEST_USER_ID = '11111111-1111-4111-8111-111111111111';
 
 export function createTestRuntime(): ApiRuntime {
   const state = createAppState();
 
   return {
     mode: 'supabase',
-    async createDeviceSession() {
-      return createDeviceSession();
+    async createDeviceSession(auth) {
+      return {
+        ...createDeviceSession(),
+        userId: auth.userId,
+      };
     },
     async listFragments() {
       return listFragments(state);
     },
-    async getFragmentDetail(fragmentId) {
+    async getFragmentDetail(_auth, fragmentId) {
       return getFragmentDetail(state, fragmentId);
     },
-    async ingestFragment(input) {
-      const fragment = createFragment(state, input);
+    async ingestFragment(auth, input) {
+      const fragment = createFragment(state, {
+        ...input,
+        userId: auth.userId,
+      });
       processFragment(state, fragment.fragmentId);
 
       return {
@@ -50,13 +59,20 @@ export function createTestRuntime(): ApiRuntime {
         status: 'processing',
       };
     },
+    async retryFragmentProcessing(_auth, fragmentId) {
+      processFragment(state, fragmentId);
+      return {
+        fragmentId,
+        status: 'processing',
+      };
+    },
     async listDerivedObjectCandidates() {
       return listDerivedObjectCandidates(state);
     },
-    async getDerivedObjectDetail(objectId) {
+    async getDerivedObjectDetail(_auth, objectId) {
       return getDerivedObjectDetail(state, objectId);
     },
-    async reviewDerivedObject(objectId, action) {
+    async reviewDerivedObject(_auth, objectId, action) {
       switch (action) {
         case 'confirm':
           return confirmDerivedObject(state, objectId);
@@ -66,7 +82,7 @@ export function createTestRuntime(): ApiRuntime {
           return postponeDerivedObject(state, objectId);
       }
     },
-    async reviewDerivedObjectUpdates(objectId) {
+    async reviewDerivedObjectUpdates(_auth, objectId) {
       return reviewDerivedObjectUpdates(state, objectId).map((suggestion) => ({
         objectId,
         suggestedSummary: suggestion.suggestedSummary,
@@ -74,14 +90,21 @@ export function createTestRuntime(): ApiRuntime {
           suggestion.suggestedSupportingFragmentIds,
       }));
     },
-    async mergeDerivedObjects(sourceId, targetId) {
+    async mergeDerivedObjects(_auth, sourceId, targetId) {
       return mergeDerivedObjects(state, sourceId, targetId);
     },
-    async searchKnowledgeBase(input) {
+    async searchKnowledgeBase(_auth, input) {
       return searchKnowledgeBase(state, input);
     },
-    async saveAnswerAsFragment(answerId) {
+    async saveAnswerAsFragment(_auth, answerId) {
       return saveAnswerAsFragment(state, answerId);
     },
   };
+}
+
+export function createTestAuthResolver(): AuthResolver {
+  return async () => ({
+    userId: TEST_USER_ID,
+    accessToken: 'test-access-token',
+  });
 }

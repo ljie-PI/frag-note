@@ -14,6 +14,12 @@ function createDesktopApiClientStub(): ExtendedDesktopApiClient {
     async getFragmentDetail() {
       return null;
     },
+    async retryFragmentProcessing(fragmentId) {
+      return {
+        fragmentId,
+        status: 'processing',
+      };
+    },
     async listCandidates() {
       return [];
     },

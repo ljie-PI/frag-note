@@ -13,6 +13,18 @@ export function createQueue(): QueueClient {
   return {
     kind: 'supabase-jobs',
     async enqueue(jobName, payload) {
+      const userId =
+        typeof payload === 'object' &&
+        payload !== null &&
+        'userId' in payload &&
+        typeof payload.userId === 'string'
+          ? payload.userId
+          : null;
+
+      if (!userId) {
+        throw new Error('Queue payload.userId is required');
+      }
+
       const now = new Date().toISOString();
       const { error } = await serviceClient.from('processing_jobs').insert({
         job_id: randomUUID(),
@@ -24,12 +36,7 @@ export function createQueue(): QueueClient {
             ? payload.fragmentId
             : randomUUID(),
         user_id:
-          typeof payload === 'object' &&
-          payload !== null &&
-          'userId' in payload &&
-          typeof payload.userId === 'string'
-            ? payload.userId
-            : '99999999-9999-4999-8999-999999999999',
+          userId,
         job_type: jobName,
         status: 'queued',
         attempt_count: 0,
@@ -37,6 +44,8 @@ export function createQueue(): QueueClient {
         payload,
         error_code: null,
         error_message: null,
+        claimed_at: null,
+        lease_expires_at: null,
         started_at: null,
         completed_at: null,
         created_at: now,

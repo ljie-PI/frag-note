@@ -75,6 +75,12 @@ describe('desktop sync service', () => {
             processingJobs: [],
           };
         },
+        async retryFragmentProcessing(fragmentId) {
+          return {
+            fragmentId,
+            status: 'processing',
+          };
+        },
       },
     });
 

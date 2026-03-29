@@ -140,6 +140,8 @@ export const seedProcessingJob = {
   provider: 'openai',
   errorCode: null,
   errorMessage: null,
+  claimedAt: null,
+  leaseExpiresAt: null,
   startedAt: null,
   completedAt: null,
 } as const;
