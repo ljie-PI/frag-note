@@ -34,6 +34,9 @@ bun install
 Export the shared runtime variables:
 
 ```bash
+cp .env.example .env
+source .env
+
 export SUPABASE_URL="https://<project>.supabase.co"
 export SUPABASE_ANON_KEY="<anon-key>"
 export SUPABASE_SERVICE_ROLE_KEY="<service-role-key>"
@@ -50,6 +53,8 @@ export OPENAI_OCR_MODEL="gpt-4.1-mini"
 export VITE_SUPABASE_URL="$SUPABASE_URL"
 export VITE_SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY"
 ```
+
+Or fill in `.env.example` and load it from your shell.
 
 ## Supabase Setup
 
