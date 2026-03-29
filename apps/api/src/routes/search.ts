@@ -1,5 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
+import type { AuthResolver } from '../lib/request-auth.js';
 import type { ApiRuntime } from '../runtime/runtime.js';
 
 const searchRequestSchema = z.strictObject({
@@ -13,7 +14,11 @@ const saveAnswerRequestSchema = z.strictObject({
   citedFragmentIds: z.array(z.string().uuid()),
 });
 
-export function registerSearchRoutes(app: FastifyInstance, runtime: ApiRuntime) {
+export function registerSearchRoutes(
+  app: FastifyInstance,
+  runtime: ApiRuntime,
+  authResolver: AuthResolver,
+) {
   app.post('/v1/search', async (request, reply) => {
     const parsedRequest = searchRequestSchema.safeParse(request.body);
 
@@ -22,7 +27,8 @@ export function registerSearchRoutes(app: FastifyInstance, runtime: ApiRuntime) 
       return { error: 'Invalid search payload' };
     }
 
-    return runtime.searchKnowledgeBase(parsedRequest.data);
+    const auth = await authResolver(request);
+    return runtime.searchKnowledgeBase(auth, parsedRequest.data);
   });
 
   app.post('/v1/answers/:id/save-as-fragment', async (request, reply) => {
@@ -34,7 +40,8 @@ export function registerSearchRoutes(app: FastifyInstance, runtime: ApiRuntime) 
       return { error: 'Invalid answer promotion request' };
     }
 
-    const promoted = await runtime.saveAnswerAsFragment(params.data.id);
+    const auth = await authResolver(request);
+    const promoted = await runtime.saveAnswerAsFragment(auth, params.data.id);
 
     if (!promoted) {
       reply.code(404);

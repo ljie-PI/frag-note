@@ -12,6 +12,8 @@ describe('processingJobSchema', () => {
       provider: 'openai',
       errorCode: null,
       errorMessage: null,
+      claimedAt: null,
+      leaseExpiresAt: null,
       startedAt: null,
       completedAt: null,
     });
@@ -31,6 +33,8 @@ describe('processingJobSchema', () => {
         provider: 'openai',
         errorCode: null,
         errorMessage: null,
+        claimedAt: null,
+        leaseExpiresAt: null,
         startedAt: null,
         completedAt: null,
       }),

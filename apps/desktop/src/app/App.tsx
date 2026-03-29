@@ -10,12 +10,14 @@ import {
   createDesktopApiClient,
   type ExtendedDesktopApiClient,
 } from '../lib/api-client.ts';
+import { createAuthClient } from '../lib/auth-client.ts';
 import { createDesktopAdapter } from '../lib/desktop-adapter.ts';
 import { RecentFragmentsPage } from './routes/recent-fragments.tsx';
 import { FragmentDetailPage } from './routes/fragment-detail.tsx';
 import { OrganizationPage } from './routes/organization.tsx';
 import { DerivedObjectDetailPage } from './routes/derived-object-detail.tsx';
 import { SearchPage } from './routes/search.tsx';
+import { AuthGate } from './routes/auth-gate.tsx';
 
 type AppProps = {
   apiClient?: ExtendedDesktopApiClient;
@@ -24,12 +26,30 @@ type AppProps = {
 export function App({ apiClient: providedApiClient }: AppProps = {}) {
   const adapter = useMemo(() => createDesktopAdapter(), []);
   const store = useMemo(() => createCaptureStore({ adapter }), [adapter]);
-  const apiClient = useMemo(
-    () => providedApiClient ?? createDesktopApiClient(),
+  const authClient = useMemo(
+    () =>
+      providedApiClient
+        ? null
+        : createAuthClient({
+            baseUrl: '',
+            fetchImpl: fetch as never,
+          }),
     [providedApiClient],
   );
+  const [isAuthenticated, setIsAuthenticated] = useState(
+    providedApiClient ? true : Boolean(authClient?.getSession()),
+  );
+  const apiClient = useMemo(
+    () =>
+      providedApiClient
+        ? providedApiClient
+        : isAuthenticated
+          ? createDesktopApiClient()
+          : null,
+    [providedApiClient, isAuthenticated],
+  );
   const syncService = useMemo(
-    () => createSyncService({ store, apiClient }),
+    () => (apiClient ? createSyncService({ store, apiClient }) : null),
     [apiClient, store],
   );
 
@@ -43,6 +63,12 @@ export function App({ apiClient: providedApiClient }: AppProps = {}) {
   );
 
   const refresh = async () => {
+    if (!apiClient) {
+      setRecords([]);
+      setCandidates([]);
+      return;
+    }
+
     const [nextRecords, nextCandidates] = await Promise.all([
       store.listRecords(),
       apiClient.listCandidates().catch(() => []),
@@ -54,9 +80,13 @@ export function App({ apiClient: providedApiClient }: AppProps = {}) {
 
   useEffect(() => {
     void refresh();
-  }, []);
+  }, [apiClient]);
 
   const handleAnswerSave = async (answer: AnswerArtifact) => {
+    if (!apiClient) {
+      return;
+    }
+
     await apiClient.saveAnswerAsFragment(answer.answerId, {
       sourceQuery: answer.queryText,
       citedFragmentIds: answer.citations.map((citation) => citation.fragmentId),
@@ -75,15 +105,50 @@ export function App({ apiClient: providedApiClient }: AppProps = {}) {
     }
   };
 
+  if (!apiClient || !syncService) {
+    if (!authClient) {
+      return <main><h1>Sui Note Desktop</h1></main>;
+    }
+
+    return (
+      <main>
+        <h1>Sui Note Desktop</h1>
+        <AuthGate
+          authClient={authClient}
+          onAuthenticated={async () => {
+            setIsAuthenticated(true);
+          }}
+        />
+      </main>
+    );
+  }
+
   return (
     <main>
       <h1>Sui Note Desktop</h1>
+      {authClient ? (
+        <button
+          onClick={async () => {
+            await authClient.signOut();
+            setIsAuthenticated(false);
+            setSelectedRecord(null);
+            setSelectedCandidate(null);
+          }}
+          type="button"
+        >
+          Sign Out
+        </button>
+      ) : null}
       <CapturePalette store={store} syncService={syncService} onSaved={refresh} />
       <RecentFragmentsPage
         records={records}
         onSelect={setSelectedRecord}
-        onRetry={async () => {
-          await syncService.flushQueue();
+        onRetry={async (record) => {
+          if (record.fragment.status === 'failed') {
+            await syncService.retryFailedFragment(record.fragment.fragmentId);
+          } else {
+            await syncService.flushQueue();
+          }
           await refresh();
         }}
       />

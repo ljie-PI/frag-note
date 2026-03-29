@@ -10,8 +10,6 @@ import type {
   Relation,
 } from '@sui-note/domain';
 
-export const DEFAULT_RUNTIME_USER_ID = '99999999-9999-4999-8999-999999999999';
-
 type JsonRecord = Record<string, unknown>;
 
 export function buildFragmentRecord(input: {
@@ -19,12 +17,12 @@ export function buildFragmentRecord(input: {
   rawText?: string | null;
   titleOptional?: string | null;
   originKind?: Fragment['originKind'];
-  userId?: string;
+  userId: string;
 }) {
   const now = new Date().toISOString();
   const fragment: Fragment = {
     fragmentId: randomUUID(),
-    userId: input.userId ?? DEFAULT_RUNTIME_USER_ID,
+    userId: input.userId,
     createdAt: now,
     sourceType: input.sourceType,
     originKind: input.originKind ?? 'user_capture',
@@ -69,6 +67,8 @@ export function buildProcessingJobRecord(fragment: Fragment, jobType: string) {
     provider: 'supabase-worker',
     errorCode: null,
     errorMessage: null,
+    claimedAt: null,
+    leaseExpiresAt: null,
     startedAt: null,
     completedAt: null,
   };
@@ -86,6 +86,8 @@ export function buildProcessingJobRecord(fragment: Fragment, jobType: string) {
       payload: { sourceType: fragment.sourceType },
       error_code: job.errorCode,
       error_message: job.errorMessage,
+      claimed_at: job.claimedAt,
+      lease_expires_at: job.leaseExpiresAt,
       started_at: job.startedAt,
       completed_at: job.completedAt,
       created_at: now,
@@ -106,7 +108,14 @@ export function buildAssetRows(fragment: Fragment): Array<{
 
   try {
     const parsed = JSON.parse(rawText) as {
-      assets?: Array<{ fileName: string; localPath: string; mimeType: string }>;
+      assets?: Array<{
+        fileName: string;
+        localPath?: string;
+        storageKey?: string;
+        storageBucket?: string;
+        mimeType: string;
+        byteSize?: number;
+      }>;
     };
 
     if (!Array.isArray(parsed.assets)) {
@@ -120,12 +129,12 @@ export function buildAssetRows(fragment: Fragment): Array<{
         assetType: 'attachment',
         mimeType: pointer.mimeType,
         storagePath: {
-          bucket: 'captures-raw',
-          key: pointer.localPath,
+          bucket: pointer.storageBucket ?? 'captures-raw',
+          key: pointer.storageKey ?? pointer.localPath ?? pointer.fileName,
         },
         fileNameOptional: pointer.fileName,
         checksum: null,
-        byteSize: 0,
+        byteSize: pointer.byteSize ?? 0,
         createdAt: new Date().toISOString(),
       };
 
@@ -297,6 +306,8 @@ export function mapProcessingJobRow(row: Record<string, unknown>): ProcessingJob
     provider: String(row.provider ?? 'supabase-worker'),
     errorCode: nullableString(row.error_code),
     errorMessage: nullableString(row.error_message),
+    claimedAt: nullableString(row.claimed_at),
+    leaseExpiresAt: nullableString(row.lease_expires_at),
     startedAt: nullableString(row.started_at),
     completedAt: nullableString(row.completed_at),
   };

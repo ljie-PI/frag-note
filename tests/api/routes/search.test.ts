@@ -1,10 +1,9 @@
 import { describe, expect, it } from 'bun:test';
-import { buildApp } from '../../../apps/api/src/app.js';
-import { createTestRuntime } from '../support/test-runtime.js';
+import { createTestApp } from '../support/test-app.js';
 
 describe('search and answer routes', () => {
   it('returns a cited answer and supports promotion into a new fragment', async () => {
-    const app = buildApp({ runtime: createTestRuntime() });
+    const app = createTestApp();
 
     const ingestResponse = await app.inject({
       method: 'POST',

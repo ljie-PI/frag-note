@@ -1,11 +1,14 @@
 import { fileURLToPath } from 'node:url';
 import { buildApp } from './app.js';
+import type { AuthResolver } from './lib/request-auth.js';
 import type { ApiRuntime } from './runtime/runtime.js';
 
 const DEFAULT_HOST = '0.0.0.0';
 const DEFAULT_PORT = 3000;
 
-export async function startServer(options: { runtime?: ApiRuntime } = {}) {
+export async function startServer(
+  options: { runtime?: ApiRuntime; authResolver?: AuthResolver } = {},
+) {
   const app = buildApp(options);
 
   try {

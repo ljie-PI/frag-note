@@ -1,5 +1,6 @@
 import type { AnswerArtifact, DerivedObject, Fragment } from '@sui-note/domain';
 import type { CreateDeviceSessionResponse } from '@sui-note/contracts/auth';
+import type { RequestAuthContext } from '../lib/request-auth.js';
 import type { FragmentDetail, CreateFragmentInput } from '../services/fragment-ingestion.js';
 
 export type DerivedObjectUpdateSuggestion = {
@@ -21,26 +22,51 @@ export type SaveAnswerResult = {
 
 export interface ApiRuntime {
   mode: 'supabase';
-  createDeviceSession(): Promise<CreateDeviceSessionResponse>;
-  listFragments(): Promise<Fragment[]>;
-  getFragmentDetail(fragmentId: string): Promise<FragmentDetail | null>;
-  ingestFragment(input: CreateFragmentInput): Promise<{
+  createDeviceSession(auth: RequestAuthContext): Promise<CreateDeviceSessionResponse>;
+  listFragments(auth: RequestAuthContext): Promise<Fragment[]>;
+  getFragmentDetail(
+    auth: RequestAuthContext,
+    fragmentId: string,
+  ): Promise<FragmentDetail | null>;
+  ingestFragment(
+    auth: RequestAuthContext,
+    input: CreateFragmentInput,
+  ): Promise<{
     fragmentId: string;
     status: 'processing' | 'ready';
   }>;
-  listDerivedObjectCandidates(): Promise<DerivedObject[]>;
-  getDerivedObjectDetail(objectId: string): Promise<DerivedObject | null>;
+  retryFragmentProcessing(
+    auth: RequestAuthContext,
+    fragmentId: string,
+  ): Promise<{
+    fragmentId: string;
+    status: 'processing';
+  } | null>;
+  listDerivedObjectCandidates(auth: RequestAuthContext): Promise<DerivedObject[]>;
+  getDerivedObjectDetail(
+    auth: RequestAuthContext,
+    objectId: string,
+  ): Promise<DerivedObject | null>;
   reviewDerivedObject(
+    auth: RequestAuthContext,
     objectId: string,
     action: 'confirm' | 'dismiss' | 'postpone',
   ): Promise<DerivedObject | null>;
   reviewDerivedObjectUpdates(
+    auth: RequestAuthContext,
     objectId: string,
   ): Promise<DerivedObjectUpdateSuggestion[]>;
   mergeDerivedObjects(
+    auth: RequestAuthContext,
     sourceId: string,
     targetId: string,
   ): Promise<DerivedObject | null>;
-  searchKnowledgeBase(input: SearchInput): Promise<AnswerArtifact>;
-  saveAnswerAsFragment(answerId: string): Promise<SaveAnswerResult | null>;
+  searchKnowledgeBase(
+    auth: RequestAuthContext,
+    input: SearchInput,
+  ): Promise<AnswerArtifact>;
+  saveAnswerAsFragment(
+    auth: RequestAuthContext,
+    answerId: string,
+  ): Promise<SaveAnswerResult | null>;
 }

@@ -38,4 +38,11 @@ describe('schema exports', () => {
   it('enforces the user-to-device-session foreign key', () => {
     expect(getTableConfig(deviceSessionsTable).foreignKeys).toHaveLength(1);
   });
+
+  it('tracks lease fields on processing jobs for worker retries', () => {
+    const columnNames = Object.keys(processingJobsTable);
+
+    expect(columnNames).toContain('claimedAt');
+    expect(columnNames).toContain('leaseExpiresAt');
+  });
 });

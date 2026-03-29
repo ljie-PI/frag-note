@@ -7,6 +7,8 @@ import type {
   ProcessingJob,
   Relation,
 } from '@sui-note/domain';
+import { invoke } from '@tauri-apps/api/core';
+import { ensureSupabaseSession } from './auth-client.ts';
 import type { DesktopApiClient } from '../features/sync/sync-service.ts';
 
 type SearchInput = {
@@ -53,63 +55,32 @@ function createSupabaseDesktopApiClient(url: string, anonKey: string) {
 
   return {
     async ingestFragment(payload) {
+      const session = await readSupabaseSessionSnapshot(url, anonKey);
       const now = new Date().toISOString();
       const fragmentId = createUuid();
-      const userId = '99999999-9999-4999-8999-999999999999';
-      const assetRows = extractAssetRowsFromRawText(
+      const userId = session.userId;
+      const normalizedPayload = parseLocalCapturePayload(payload.rawText ?? null);
+      const uploadedAssets = await uploadAssetsToSupabaseStorage(
+        supabase,
         fragmentId,
         userId,
-        payload.rawText ?? null,
+        normalizedPayload.assets,
       );
-
-      const fragmentInsert = await supabase.from('fragments').insert({
-        fragment_id: fragmentId,
-        user_id: userId,
-        source_type: payload.sourceType,
-        origin_kind: 'user_capture',
-        title_optional: payload.titleOptional ?? null,
-        raw_text_optional: payload.rawText ?? null,
-        status: 'processing',
-        device_metadata: {
-          platform: 'desktop',
-          captureMethod: 'supabase_direct',
-          appVersion: '0.1.0',
-          deviceName: 'desktop',
-        },
-        language_hint_optional: 'en',
-        created_at: now,
-        updated_at: now,
-      });
-      throwIfError(fragmentInsert.error);
-
-      if (assetRows.length > 0) {
-        const assetInsert = await supabase.from('assets').insert(assetRows);
-        throwIfError(assetInsert.error);
-      }
-
-      const jobInsert = await supabase.from('processing_jobs').insert({
-        job_id: createUuid(),
-        fragment_id: fragmentId,
-        user_id: userId,
-        job_type: inferPrimaryJobType(payload.sourceType),
-        status: 'queued',
-        attempt_count: 0,
-        provider: 'desktop-client',
-        payload: {
+      const response = await supabase.functions.invoke('capture-fragment', {
+        body: {
+          fragmentId,
           sourceType: payload.sourceType,
+          titleOptional: payload.titleOptional ?? null,
+          rawTextOptional: normalizedPayload.rawText,
+          createdAt: now,
+          assetRows: uploadedAssets.map((asset) => asset.row),
         },
-        error_code: null,
-        error_message: null,
-        started_at: null,
-        completed_at: null,
-        created_at: now,
-        updated_at: now,
       });
-      throwIfError(jobInsert.error);
+      throwIfError(response.error);
 
-      return {
-        fragmentId,
-        status: 'processing' as const,
+      return response.data as {
+        fragmentId: string;
+        status: 'processing';
       };
     },
     async getFragmentDetail(fragmentId) {
@@ -150,6 +121,19 @@ function createSupabaseDesktopApiClient(url: string, anonKey: string) {
         ),
       };
     },
+    async retryFragmentProcessing(fragmentId) {
+      const response = await supabase.functions.invoke('retry-fragment', {
+        body: {
+          fragmentId,
+        },
+      });
+      throwIfError(response.error);
+
+      return response.data as {
+        fragmentId: string;
+        status: 'processing';
+      };
+    },
     async listCandidates() {
       const response = await supabase
         .from('derived_objects')
@@ -160,27 +144,14 @@ function createSupabaseDesktopApiClient(url: string, anonKey: string) {
       return (response.data ?? []).map((row) => mapDerivedObjectRow(row));
     },
     async reviewCandidate(objectId, action) {
-      const response = await supabase
-        .from('derived_objects')
-        .update({
-          status:
-            action === 'confirm'
-              ? 'confirmed'
-              : action === 'dismiss'
-                ? 'dismissed'
-                : 'postponed',
-          updated_at: new Date().toISOString(),
-        })
-        .eq('object_id', objectId)
-        .select('*')
-        .limit(1);
+      const response = await supabase.functions.invoke('review-derived-object', {
+        body: {
+          objectId,
+          action,
+        },
+      });
       throwIfError(response.error);
-
-      const candidate = response.data?.[0];
-      if (!candidate) {
-        throw new Error(`Derived object ${objectId} was not found`);
-      }
-      return mapDerivedObjectRow(candidate);
+      return response.data as DerivedObject;
     },
     async search(input) {
       const response = await supabase.functions.invoke('search-query', {
@@ -205,28 +176,32 @@ function createSupabaseDesktopApiClient(url: string, anonKey: string) {
 }
 
 function createBrowserSupabaseClient(url: string, anonKey: string) {
-  const headers = {
-    apikey: anonKey,
-    authorization: `Bearer ${anonKey}`,
+  const getHeaders = async () => {
+    const session = await ensureSupabaseSession(url, anonKey);
+    return {
+      apikey: anonKey,
+      authorization: `Bearer ${session?.accessToken ?? anonKey}`,
+    };
   };
 
   return {
     from(table: string) {
       return {
         select(columns = '*') {
-          return createSelectBuilder(url, table, headers, columns);
+          return createSelectBuilder(url, table, getHeaders, columns);
         },
         insert(body: Record<string, unknown> | Array<Record<string, unknown>>) {
-          return createMutationBuilder(url, table, headers, 'POST', body);
+          return createMutationBuilder(url, table, getHeaders, 'POST', body);
         },
         update(body: Record<string, unknown>) {
-          return createMutationBuilder(url, table, headers, 'PATCH', body);
+          return createMutationBuilder(url, table, getHeaders, 'PATCH', body);
         },
       };
     },
     functions: {
       async invoke(name: string, options: { body: unknown }) {
         try {
+          const headers = await getHeaders();
           const response = await fetch(`${url}/functions/v1/${name}`, {
             method: 'POST',
             headers: {
@@ -246,13 +221,49 @@ function createBrowserSupabaseClient(url: string, anonKey: string) {
         }
       },
     },
+    storage: {
+      from(bucket: string) {
+        return {
+          async upload(
+            key: string,
+            body: Uint8Array,
+            options: { upsert?: boolean; contentType?: string } = {},
+          ) {
+            try {
+              const headers = await getHeaders();
+              const response = await fetch(
+                `${url}/storage/v1/object/${bucket}/${encodePath(key)}`,
+                {
+                  method: 'POST',
+                  headers: {
+                    ...headers,
+                    'content-type':
+                      options.contentType ?? 'application/octet-stream',
+                    'x-upsert': options.upsert ? 'true' : 'false',
+                  },
+                  body,
+                },
+              );
+
+              if (!response.ok) {
+                throw new Error(await response.text());
+              }
+
+              return { error: null };
+            } catch (error) {
+              return { error: normalizeError(error) };
+            }
+          },
+        };
+      },
+    },
   };
 }
 
 function createSelectBuilder(
   url: string,
   table: string,
-  headers: Record<string, string>,
+  getHeaders: () => Promise<Record<string, string>>,
   columns: string,
 ) {
   const search = new URLSearchParams();
@@ -260,6 +271,7 @@ function createSelectBuilder(
 
   const execute = async () => {
     try {
+      const headers = await getHeaders();
       const response = await fetch(
         `${url}/rest/v1/${table}?${search.toString()}`,
         { headers },
@@ -320,7 +332,7 @@ function createSelectBuilder(
 function createMutationBuilder(
   url: string,
   table: string,
-  headers: Record<string, string>,
+  getHeaders: () => Promise<Record<string, string>>,
   method: 'POST' | 'PATCH',
   body: Record<string, unknown> | Array<Record<string, unknown>>,
 ) {
@@ -329,6 +341,7 @@ function createMutationBuilder(
 
   const execute = async () => {
     try {
+      const headers = await getHeaders();
       if (returnRepresentation) {
         search.set('select', '*');
       }
@@ -399,6 +412,36 @@ function readEnv(name: string): string | null {
   return typeof value === 'string' && value.length > 0 ? value : null;
 }
 
+async function readSupabaseSessionSnapshot(url: string, anonKey: string) {
+  const session = await ensureSupabaseSession(url, anonKey);
+
+  if (!session?.accessToken) {
+    throw new Error('Supabase access token is required');
+  }
+
+  const response = await fetch(`${url}/auth/v1/user`, {
+    headers: {
+      apikey: anonKey,
+      authorization: `Bearer ${session.accessToken}`,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to resolve Supabase user for desktop client');
+  }
+
+  const user = (await response.json()) as { id?: string };
+
+  if (!user.id) {
+    throw new Error('Resolved Supabase user did not include an id');
+  }
+
+  return {
+    accessToken: session.accessToken,
+    userId: user.id,
+  };
+}
+
 function requiredEnv(name: string): string {
   const value = readEnv(name);
 
@@ -407,19 +450,6 @@ function requiredEnv(name: string): string {
   }
 
   return value;
-}
-
-function inferPrimaryJobType(sourceType: Fragment['sourceType']) {
-  switch (sourceType) {
-    case 'image':
-    case 'screenshot':
-    case 'pdf':
-      return 'ocr';
-    case 'voice':
-      return 'transcription';
-    default:
-      return 'understanding';
-  }
 }
 
 function createUuid() {
@@ -434,40 +464,149 @@ function createUuid() {
   });
 }
 
-function extractAssetRowsFromRawText(
-  fragmentId: string,
-  userId: string,
-  rawText: string | null,
-) {
+function parseLocalCapturePayload(rawText: string | null) {
   if (!rawText) {
-    return [];
+    return {
+      rawText: null,
+      assets: [] as Array<{
+        fileName: string;
+        localPath?: string;
+        mimeType: string;
+        byteSize?: number;
+        base64Data?: string;
+      }>,
+    };
   }
 
   try {
     const parsed = JSON.parse(rawText) as {
-      assets?: Array<{ fileName: string; localPath: string; mimeType: string }>;
+      rawText?: unknown;
+      assets?: unknown;
     };
 
     if (!Array.isArray(parsed.assets)) {
-      return [];
+      return {
+        rawText,
+        assets: [],
+      };
     }
 
-    return parsed.assets.map((asset) => ({
-      asset_id: createUuid(),
-      fragment_id: fragmentId,
-      user_id: userId,
-      asset_type: 'attachment',
-      mime_type: asset.mimeType,
-      storage_bucket: 'captures-raw',
-      storage_key: asset.localPath,
-      file_name_optional: asset.fileName,
-      checksum: null,
-      byte_size: 0,
-      created_at: new Date().toISOString(),
-    }));
+    return {
+      rawText: typeof parsed.rawText === 'string' ? parsed.rawText : null,
+      assets: parsed.assets.filter(
+        (asset): asset is {
+          fileName: string;
+          localPath?: string;
+          mimeType: string;
+          byteSize?: number;
+          base64Data?: string;
+        } =>
+          Boolean(
+            asset &&
+              typeof asset === 'object' &&
+              typeof (asset as { fileName?: unknown }).fileName === 'string' &&
+              typeof (asset as { mimeType?: unknown }).mimeType === 'string' &&
+              (
+                typeof (asset as { localPath?: unknown }).localPath === 'string' ||
+                typeof (asset as { base64Data?: unknown }).base64Data === 'string'
+              ),
+          ),
+      ),
+    };
   } catch {
-    return [];
+    return {
+      rawText,
+      assets: [],
+    };
   }
+}
+
+async function uploadAssetsToSupabaseStorage(
+  supabase: ReturnType<typeof createBrowserSupabaseClient>,
+  fragmentId: string,
+  userId: string,
+  assets: Array<{
+    fileName: string;
+    localPath?: string;
+    mimeType: string;
+    byteSize?: number;
+    base64Data?: string;
+  }>,
+) {
+  return Promise.all(
+    assets.map(async (asset) => {
+      const bytes = await readLocalAssetBytes(asset);
+      const storageKey = `${userId}/${fragmentId}/${asset.fileName}`;
+      const upload = await supabase.storage.from('captures-raw').upload(
+        storageKey,
+        bytes,
+        {
+          upsert: true,
+          contentType: asset.mimeType,
+        },
+      );
+      throwIfError(upload.error);
+
+      return {
+        row: {
+          asset_id: createUuid(),
+          fragment_id: fragmentId,
+          user_id: userId,
+          asset_type: 'attachment',
+          mime_type: asset.mimeType,
+          storage_bucket: 'captures-raw',
+          storage_key: storageKey,
+          file_name_optional: asset.fileName,
+          checksum: null,
+          byte_size: asset.byteSize ?? bytes.byteLength,
+          created_at: new Date().toISOString(),
+        },
+      };
+    }),
+  );
+}
+
+async function readLocalAssetBytes(asset: {
+  fileName: string;
+  localPath?: string;
+  mimeType: string;
+  base64Data?: string;
+}) {
+  if (typeof asset.base64Data === 'string' && asset.base64Data.length > 0) {
+    return base64ToBytes(asset.base64Data);
+  }
+
+  if (typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window) {
+    if (!asset.localPath) {
+      throw new Error(`localPath is required for Tauri asset ${asset.fileName}`);
+    }
+    const base64 = await invoke<string>('read_local_asset_base64', {
+      localPath: asset.localPath,
+    });
+    return base64ToBytes(base64);
+  }
+
+  return new TextEncoder().encode(
+    `placeholder asset for ${asset.fileName} (${asset.mimeType})`,
+  );
+}
+
+function base64ToBytes(base64: string) {
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+
+  for (let index = 0; index < binary.length; index += 1) {
+    bytes[index] = binary.charCodeAt(index);
+  }
+
+  return bytes;
+}
+
+function encodePath(value: string) {
+  return value
+    .split('/')
+    .map((part) => encodeURIComponent(part))
+    .join('/');
 }
 
 function mapFragmentRow(row: Record<string, unknown>): Fragment {

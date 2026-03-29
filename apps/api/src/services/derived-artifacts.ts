@@ -1,8 +1,18 @@
 import { randomUUID } from 'node:crypto';
 import type { Citation, DerivedArtifact, Fragment } from '@sui-note/domain';
-import { generateSummaryAndTags } from '../workers/providers/llm-provider.js';
-import { runOcr } from '../workers/providers/ocr-provider.js';
-import { transcribeVoice } from '../workers/providers/transcription-provider.js';
+import {
+  parseFragmentPayload,
+  type FragmentAssetPointer,
+} from './fragment-content.js';
+import {
+  generateSummaryAndTags,
+  generateSummaryTagsAndEmbedding,
+} from '../workers/providers/llm-provider.js';
+import { runOcr, runOcrForAsset } from '../workers/providers/ocr-provider.js';
+import {
+  transcribeVoice,
+  transcribeVoiceAsset,
+} from '../workers/providers/transcription-provider.js';
 
 export function buildDerivedArtifactsForFragment(
   fragment: Fragment,
@@ -38,10 +48,104 @@ export function buildDerivedArtifactsForFragment(
   return artifacts;
 }
 
+export async function buildDerivedArtifactsForFragmentAsync(
+  fragment: Fragment,
+  assets: Array<
+    FragmentAssetPointer & {
+      bytes?: Uint8Array;
+    }
+  > = [],
+): Promise<DerivedArtifact[]> {
+  const parsedPayload = parseFragmentPayload(fragment.rawTextOptional);
+  const supplementalText: string[] = [];
+  const artifacts: DerivedArtifact[] = [];
+  const primaryAsset = assets[0] ?? parsedPayload.assets[0] ?? null;
+
+  if (
+    fragment.sourceType === 'image' ||
+    fragment.sourceType === 'screenshot' ||
+    fragment.sourceType === 'pdf'
+  ) {
+    const ocr = await runOcrForAsset(fragment, primaryAsset);
+    artifacts.push(
+      createArtifact(
+        fragment,
+        'ocr',
+        { text: ocr.text },
+        {
+          provider: ocr.provider,
+          model: ocr.model,
+        },
+      ),
+    );
+    if (ocr.text.trim().length > 0) {
+      supplementalText.push(ocr.text);
+    }
+  }
+
+  if (fragment.sourceType === 'voice') {
+    const transcript = await transcribeVoiceAsset(fragment, primaryAsset);
+    artifacts.push(
+      createArtifact(
+        fragment,
+        'transcript',
+        { text: transcript.text },
+        {
+          provider: transcript.provider,
+          model: transcript.model,
+        },
+      ),
+    );
+    if (transcript.text.trim().length > 0) {
+      supplementalText.push(transcript.text);
+    }
+  }
+
+  const aiOutput = await generateSummaryTagsAndEmbedding(fragment, supplementalText);
+  artifacts.unshift(
+    createArtifact(
+      fragment,
+      'summary',
+      { text: aiOutput.summary },
+      {
+        provider: aiOutput.provider,
+        model: aiOutput.model,
+      },
+    ),
+    createArtifact(
+      fragment,
+      'tags',
+      { tags: aiOutput.tags },
+      {
+        provider: aiOutput.provider,
+        model: aiOutput.model,
+      },
+    ),
+    createArtifact(
+      fragment,
+      'embedding',
+      {
+        vector: aiOutput.embedding,
+        keywords: aiOutput.embeddingKeywords,
+      },
+      {
+        provider: aiOutput.provider,
+        model: aiOutput.model,
+      },
+    ),
+  );
+
+  return artifacts;
+}
+
 function createArtifact(
   fragment: Fragment,
   artifactType: DerivedArtifact['artifactType'],
   content: DerivedArtifact['content'],
+  providerMetadata: DerivedArtifact['providerMetadata'] = {
+    provider: 'in-memory',
+    model: 'heuristic',
+  },
 ): DerivedArtifact {
   return {
     artifactId: randomUUID(),
@@ -49,10 +153,7 @@ function createArtifact(
     artifactType,
     version: 'v1',
     content,
-    providerMetadata: {
-      provider: 'in-memory',
-      model: 'heuristic',
-    },
+    providerMetadata,
     createdAt: new Date().toISOString(),
     citations: [buildDirectCitation(fragment.fragmentId)],
   };
