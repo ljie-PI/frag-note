@@ -1,4 +1,6 @@
 import { fileURLToPath } from 'node:url';
+import { shouldUseSupabaseRuntime } from './lib/supabase.js';
+import { runSupabaseProcessingLoop } from './runtime/supabase-runtime.js';
 
 type RunWorkerOptions = {
   signal?: AbortSignal;
@@ -10,6 +12,11 @@ export async function runWorker(
   console.info('Worker shell started');
 
   if (options.signal?.aborted) {
+    return;
+  }
+
+  if (shouldUseSupabaseRuntime()) {
+    await runSupabaseProcessingLoop(options.signal);
     return;
   }
 

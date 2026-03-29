@@ -1,12 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import {
-  createFragment,
-  getFragmentDetail,
-  listFragments,
-  processFragment,
-} from '../services/fragment-ingestion.js';
-import type { AppState } from '../services/app-state.js';
+import type { ApiRuntime } from '../runtime/runtime.js';
 
 const createFragmentRequestSchema = z.strictObject({
   sourceType: z.enum(['text', 'image', 'link', 'screenshot', 'pdf', 'voice']),
@@ -14,9 +8,9 @@ const createFragmentRequestSchema = z.strictObject({
   titleOptional: z.string().nullable().optional(),
 });
 
-export function registerFragmentRoutes(app: FastifyInstance, state: AppState) {
+export function registerFragmentRoutes(app: FastifyInstance, runtime: ApiRuntime) {
   app.get('/v1/fragments', async () => ({
-    fragments: listFragments(state),
+    fragments: await runtime.listFragments(),
   }));
 
   app.get('/v1/fragments/:id', async (request, reply) => {
@@ -27,7 +21,7 @@ export function registerFragmentRoutes(app: FastifyInstance, state: AppState) {
       return { error: 'Invalid fragment id' };
     }
 
-    const detail = getFragmentDetail(state, params.data.id);
+    const detail = await runtime.getFragmentDetail(params.data.id);
 
     if (!detail) {
       reply.code(404);
@@ -45,13 +39,7 @@ export function registerFragmentRoutes(app: FastifyInstance, state: AppState) {
       return { error: 'Invalid fragment payload' };
     }
 
-    const fragment = createFragment(state, parsedRequest.data);
-    processFragment(state, fragment.fragmentId);
-
     reply.code(202);
-    return {
-      fragmentId: fragment.fragmentId,
-      status: 'processing',
-    };
+    return runtime.ingestFragment(parsedRequest.data);
   });
 }

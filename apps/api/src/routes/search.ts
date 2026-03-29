@@ -1,7 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { searchKnowledgeBase, saveAnswerAsFragment } from '../services/search-service.js';
-import type { AppState } from '../services/app-state.js';
+import type { ApiRuntime } from '../runtime/runtime.js';
 
 const searchRequestSchema = z.strictObject({
   queryText: z.string(),
@@ -14,7 +13,7 @@ const saveAnswerRequestSchema = z.strictObject({
   citedFragmentIds: z.array(z.string().uuid()),
 });
 
-export function registerSearchRoutes(app: FastifyInstance, state: AppState) {
+export function registerSearchRoutes(app: FastifyInstance, runtime: ApiRuntime) {
   app.post('/v1/search', async (request, reply) => {
     const parsedRequest = searchRequestSchema.safeParse(request.body);
 
@@ -23,7 +22,7 @@ export function registerSearchRoutes(app: FastifyInstance, state: AppState) {
       return { error: 'Invalid search payload' };
     }
 
-    return searchKnowledgeBase(state, parsedRequest.data);
+    return runtime.searchKnowledgeBase(parsedRequest.data);
   });
 
   app.post('/v1/answers/:id/save-as-fragment', async (request, reply) => {
@@ -35,7 +34,7 @@ export function registerSearchRoutes(app: FastifyInstance, state: AppState) {
       return { error: 'Invalid answer promotion request' };
     }
 
-    const promoted = saveAnswerAsFragment(state, params.data.id);
+    const promoted = await runtime.saveAnswerAsFragment(params.data.id);
 
     if (!promoted) {
       reply.code(404);

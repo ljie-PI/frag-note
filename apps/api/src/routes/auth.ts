@@ -3,9 +3,9 @@ import {
   createDeviceSessionRequestSchema,
   createDeviceSessionResponseSchema,
 } from '@sui-note/contracts/auth';
-import { createDeviceSession } from '../services/auth/session-service.js';
+import type { ApiRuntime } from '../runtime/runtime.js';
 
-export function registerAuthRoute(app: FastifyInstance) {
+export function registerAuthRoute(app: FastifyInstance, runtime: ApiRuntime) {
   app.post('/v1/auth/device-session', async (request, reply) => {
     const parsedRequest = createDeviceSessionRequestSchema.safeParse(
       request.body,
@@ -20,6 +20,8 @@ export function registerAuthRoute(app: FastifyInstance) {
 
     reply.code(201);
 
-    return createDeviceSessionResponseSchema.parse(createDeviceSession());
+    return createDeviceSessionResponseSchema.parse(
+      await runtime.createDeviceSession(),
+    );
   });
 }

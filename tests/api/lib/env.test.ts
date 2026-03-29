@@ -1,33 +1,51 @@
 import { describe, expect, it } from 'bun:test';
 
 describe('parseEnv', () => {
-  it('requires database and redis configuration', async () => {
-    const { parseEnv } = await import('../../../apps/api/src/lib/env.js');
+  it('requires Supabase configuration and fills storage defaults', async () => {
+    const { hasSupabaseRuntimeEnv, parseEnv } = await import(
+      '../../../apps/api/src/lib/env.js'
+    );
 
     expect(
       parseEnv({
-        DATABASE_URL: 'postgresql://postgres:postgres@127.0.0.1:5432/sui_note',
-        REDIS_URL: 'redis://127.0.0.1:6379',
+        SUPABASE_URL: 'https://example.supabase.co',
+        SUPABASE_ANON_KEY: 'anon-key',
+        SUPABASE_SERVICE_ROLE_KEY: 'service-role-key',
       }),
     ).toEqual({
-      database: {
-        url: 'postgresql://postgres:postgres@127.0.0.1:5432/sui_note',
+      supabase: {
+        url: 'https://example.supabase.co',
+        anonKey: 'anon-key',
+        serviceRoleKey: 'service-role-key',
+        storage: {
+          rawBucket: 'captures-raw',
+          derivedBucket: 'captures-derived',
+        },
       },
-      redis: {
-        url: 'redis://127.0.0.1:6379',
+      ai: {
+        openAiApiKey: null,
       },
     });
+    expect(
+      hasSupabaseRuntimeEnv({
+        SUPABASE_URL: 'https://example.supabase.co',
+        SUPABASE_ANON_KEY: 'anon-key',
+        SUPABASE_SERVICE_ROLE_KEY: 'service-role-key',
+      }),
+    ).toBe(true);
 
     expect(() =>
       parseEnv({
-        REDIS_URL: 'redis://127.0.0.1:6379',
+        SUPABASE_ANON_KEY: 'anon-key',
+        SUPABASE_SERVICE_ROLE_KEY: 'service-role-key',
       }),
-    ).toThrow(/DATABASE_URL/i);
+    ).toThrow(/SUPABASE_URL/i);
 
     expect(() =>
       parseEnv({
-        DATABASE_URL: 'postgresql://postgres:postgres@127.0.0.1:5432/sui_note',
+        SUPABASE_URL: 'https://example.supabase.co',
+        SUPABASE_SERVICE_ROLE_KEY: 'service-role-key',
       }),
-    ).toThrow(/REDIS_URL/i);
+    ).toThrow(/SUPABASE_ANON_KEY/i);
   });
 });
