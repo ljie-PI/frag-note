@@ -1,4 +1,4 @@
-import { hasSupabaseRuntimeEnv, parseEnv, type ParsedEnv } from './env.js';
+import { parseEnv, type ParsedEnv } from './env.js';
 
 type QueryValue = string | number | boolean | null;
 type Filter = [string, string, QueryValue | QueryValue[]];
@@ -53,12 +53,6 @@ export function createSupabaseRuntimeClients(
     serviceClient: createChainClient(env.supabase.url, env.supabase.serviceRoleKey),
     userClient: createChainClient(env.supabase.url, env.supabase.anonKey),
   };
-}
-
-export function shouldUseSupabaseRuntime(
-  inputEnv: Record<string, string | undefined> = process.env,
-): boolean {
-  return hasSupabaseRuntimeEnv(inputEnv);
 }
 
 type QueryBuilder = {

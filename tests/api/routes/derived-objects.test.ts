@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'bun:test';
 import { buildApp } from '../../../apps/api/src/app.js';
+import { createTestRuntime } from '../support/test-runtime.js';
 
 describe('derived object review routes', () => {
   it('lists candidates and supports confirm, dismiss, and postpone flows', async () => {
-    const app = buildApp();
+    const app = buildApp({ runtime: createTestRuntime() });
 
     await app.inject({
       method: 'POST',

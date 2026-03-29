@@ -9,10 +9,6 @@ import type {
 } from '@sui-note/domain';
 import type { DesktopApiClient } from '../features/sync/sync-service.ts';
 
-type FragmentDetailResponse = Awaited<
-  ReturnType<DesktopApiClient['getFragmentDetail']>
->;
-
 type SearchInput = {
   queryText: string;
   queryType: 'keyword' | 'natural_language';
@@ -29,11 +25,7 @@ type QueryResult = Promise<{
   error: Error | null;
 }>;
 
-const DEFAULT_API_BASE_URL = 'http://127.0.0.1:3000';
-
-export function createDesktopApiClient(
-  baseUrl = DEFAULT_API_BASE_URL,
-): DesktopApiClient & {
+export type ExtendedDesktopApiClient = DesktopApiClient & {
   listCandidates(): Promise<DerivedObject[]>;
   reviewCandidate(
     objectId: string,
@@ -47,62 +39,13 @@ export function createDesktopApiClient(
       citedFragmentIds: string[];
     },
   ): Promise<AnswerPromotionResult>;
-} {
-  const supabaseUrl = readEnv('VITE_SUPABASE_URL');
-  const supabaseAnonKey = readEnv('VITE_SUPABASE_ANON_KEY');
+};
 
-  if (supabaseUrl && supabaseAnonKey) {
-    return createSupabaseDesktopApiClient(supabaseUrl, supabaseAnonKey);
-  }
+export function createDesktopApiClient(): ExtendedDesktopApiClient {
+  const supabaseUrl = requiredEnv('VITE_SUPABASE_URL');
+  const supabaseAnonKey = requiredEnv('VITE_SUPABASE_ANON_KEY');
 
-  return createHttpDesktopApiClient(baseUrl);
-}
-
-function createHttpDesktopApiClient(baseUrl: string) {
-  return {
-    async ingestFragment(payload) {
-      return requestJson(`${baseUrl}/v1/fragments`, {
-        method: 'POST',
-        body: JSON.stringify({
-          sourceType: payload.sourceType,
-          rawText: payload.rawText,
-          titleOptional: payload.titleOptional,
-        }),
-      });
-    },
-    async getFragmentDetail(fragmentId) {
-      return requestJson<FragmentDetailResponse>(
-        `${baseUrl}/v1/fragments/${fragmentId}`,
-      );
-    },
-    async listCandidates() {
-      return requestJson(`${baseUrl}/v1/derived-objects/candidates`);
-    },
-    async reviewCandidate(objectId, action) {
-      return requestJson(`${baseUrl}/v1/derived-objects/${objectId}/${action}`, {
-        method: 'POST',
-      });
-    },
-    async search(input) {
-      return requestJson(`${baseUrl}/v1/search`, {
-        method: 'POST',
-        body: JSON.stringify(input),
-      });
-    },
-    async saveAnswerAsFragment(answerId, input) {
-      return requestJson<AnswerPromotionResult>(
-        `${baseUrl}/v1/answers/${answerId}/save-as-fragment`,
-        {
-          method: 'POST',
-          body: JSON.stringify({
-            originKind: 'answer_promotion',
-            sourceQuery: input.sourceQuery,
-            citedFragmentIds: input.citedFragmentIds,
-          }),
-        },
-      );
-    },
-  };
+  return createSupabaseDesktopApiClient(supabaseUrl, supabaseAnonKey);
 }
 
 function createSupabaseDesktopApiClient(url: string, anonKey: string) {
@@ -451,28 +394,19 @@ function createMutationBuilder(
   return builder;
 }
 
-async function requestJson<T>(
-  url: string,
-  init: RequestInit = {},
-): Promise<T> {
-  const response = await fetch(url, {
-    headers: {
-      'content-type': 'application/json',
-      ...(init.headers ?? {}),
-    },
-    ...init,
-  });
-
-  if (!response.ok) {
-    throw new Error(`Request failed: ${response.status} ${response.statusText}`);
-  }
-
-  return response.json();
-}
-
 function readEnv(name: string): string | null {
   const value = import.meta.env?.[name];
   return typeof value === 'string' && value.length > 0 ? value : null;
+}
+
+function requiredEnv(name: string): string {
+  const value = readEnv(name);
+
+  if (!value) {
+    throw new Error(`${name} is required for the desktop Supabase client`);
+  }
+
+  return value;
 }
 
 function inferPrimaryJobType(sourceType: Fragment['sourceType']) {

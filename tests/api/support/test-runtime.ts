@@ -1,34 +1,37 @@
 import {
   createDeviceSession,
-} from '../services/auth/session-service.js';
-import { createAppState } from '../services/app-state.js';
+} from '../../../apps/api/src/services/auth/session-service.js';
+import { createAppState } from '../../../apps/api/src/services/app-state.js';
 import {
   createFragment,
   getFragmentDetail,
   listFragments,
   processFragment,
-} from '../services/fragment-ingestion.js';
+} from '../../../apps/api/src/services/fragment-ingestion.js';
 import {
   mergeDerivedObjects,
-} from '../services/derived-object-merge.js';
+} from '../../../apps/api/src/services/derived-object-merge.js';
 import {
   getDerivedObjectDetail,
   listDerivedObjectCandidates,
-} from '../services/derived-object-query.js';
+} from '../../../apps/api/src/services/derived-object-query.js';
 import {
   confirmDerivedObject,
   dismissDerivedObject,
   postponeDerivedObject,
-} from '../services/derived-object-review.js';
-import { reviewDerivedObjectUpdates } from '../services/derived-object-update-review.js';
-import { saveAnswerAsFragment, searchKnowledgeBase } from '../services/search-service.js';
-import type { ApiRuntime } from './runtime.js';
+} from '../../../apps/api/src/services/derived-object-review.js';
+import { reviewDerivedObjectUpdates } from '../../../apps/api/src/services/derived-object-update-review.js';
+import {
+  saveAnswerAsFragment,
+  searchKnowledgeBase,
+} from '../../../apps/api/src/services/search-service.js';
+import type { ApiRuntime } from '../../../apps/api/src/runtime/runtime.js';
 
-export function createInMemoryRuntime(): ApiRuntime {
+export function createTestRuntime(): ApiRuntime {
   const state = createAppState();
 
   return {
-    mode: 'in-memory',
+    mode: 'supabase',
     async createDeviceSession() {
       return createDeviceSession();
     },

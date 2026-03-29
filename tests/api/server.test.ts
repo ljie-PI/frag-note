@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from 'bun:test';
 import { startServer } from '../../apps/api/src/server.js';
+import { createTestRuntime } from './support/test-runtime.js';
 
 const originalPort = process.env.PORT;
 
@@ -16,6 +17,8 @@ describe('startServer', () => {
   it('rejects malformed PORT values before listen', async () => {
     process.env.PORT = '12.5';
 
-    await expect(startServer()).rejects.toThrow('PORT must be a valid integer');
+    await expect(
+      startServer({ runtime: createTestRuntime() }),
+    ).rejects.toThrow('PORT must be a valid integer');
   });
 });
