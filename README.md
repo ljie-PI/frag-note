@@ -31,30 +31,59 @@ bun install
 
 ## Environment
 
-Export the shared runtime variables:
+Copy the example file first:
 
 ```bash
 cp .env.example .env
-source .env
+```
 
+Then load it from your shell:
+
+```bash
+source .env
+```
+
+Variables currently used on `main`:
+
+- Server / worker:
+  - `HOST`
+  - `PORT`
+  - `SUPABASE_URL`
+  - `SUPABASE_ANON_KEY`
+  - `SUPABASE_SERVICE_ROLE_KEY`
+  - `SUPABASE_STORAGE_RAW_BUCKET`
+  - `SUPABASE_STORAGE_DERIVED_BUCKET`
+  - `SUPABASE_DB_URL`
+  - `OPENAI_API_KEY`
+  - `OPENAI_BASE_URL`
+  - `OPENAI_SUMMARY_MODEL`
+  - `OPENAI_EMBEDDING_MODEL`
+  - `OPENAI_TRANSCRIPTION_MODEL`
+  - `OPENAI_OCR_MODEL`
+- Desktop frontend:
+  - `VITE_SUPABASE_URL`
+  - `VITE_SUPABASE_ANON_KEY`
+
+Example exports:
+
+```bash
+export HOST="0.0.0.0"
+export PORT="3000"
 export SUPABASE_URL="https://<project>.supabase.co"
 export SUPABASE_ANON_KEY="<anon-key>"
 export SUPABASE_SERVICE_ROLE_KEY="<service-role-key>"
 export SUPABASE_STORAGE_RAW_BUCKET="captures-raw"
 export SUPABASE_STORAGE_DERIVED_BUCKET="captures-derived"
-
+export SUPABASE_DB_URL="postgresql://postgres:postgres@127.0.0.1:5432/sui_note"
 export OPENAI_API_KEY="<optional-openai-key>"
 export OPENAI_BASE_URL="https://api.openai.com/v1"
 export OPENAI_SUMMARY_MODEL="gpt-4.1-mini"
 export OPENAI_EMBEDDING_MODEL="text-embedding-3-small"
 export OPENAI_TRANSCRIPTION_MODEL="gpt-4o-mini-transcribe"
 export OPENAI_OCR_MODEL="gpt-4.1-mini"
-
 export VITE_SUPABASE_URL="$SUPABASE_URL"
 export VITE_SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY"
 ```
-
-Or fill in `.env.example` and load it from your shell.
 
 ## Supabase Setup
 
@@ -95,6 +124,22 @@ supabase secrets set \
   OPENAI_TRANSCRIPTION_MODEL="$OPENAI_TRANSCRIPTION_MODEL" \
   OPENAI_OCR_MODEL="$OPENAI_OCR_MODEL"
 ```
+
+Current checked-in Edge Functions read:
+
+- `SUPABASE_URL`
+- `SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `OPENAI_API_KEY`
+- `OPENAI_BASE_URL`
+- `OPENAI_SUMMARY_MODEL`
+- `OPENAI_EMBEDDING_MODEL`
+- `OPENAI_TRANSCRIPTION_MODEL`
+- `OPENAI_OCR_MODEL`
+
+`SUPABASE_STORAGE_RAW_BUCKET`, `SUPABASE_STORAGE_DERIVED_BUCKET`, `HOST`, `PORT`, and
+`SUPABASE_DB_URL` are still relevant for the local API/worker or SQL tools, but
+they are not currently read by the checked-in Edge Functions.
 
 ## Install
 
