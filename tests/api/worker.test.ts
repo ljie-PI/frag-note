@@ -6,25 +6,15 @@ afterEach(() => {
 });
 
 describe('runWorker', () => {
-  it('stays alive until it receives an abort signal', async () => {
-    const setIntervalSpy = vi.spyOn(globalThis, 'setInterval');
-    const clearIntervalSpy = vi.spyOn(globalThis, 'clearInterval');
+  it('delegates to the Supabase processing loop', async () => {
     const controller = new AbortController();
-    const workerPromise = runWorker({ signal: controller.signal });
-
-    expect(setIntervalSpy).toHaveBeenCalledOnce();
-
-    let settled = false;
-    workerPromise.finally(() => {
-      settled = true;
+    const runLoop = vi.fn(async (signal?: AbortSignal) => {
+      expect(signal).toBe(controller.signal);
     });
 
-    await new Promise((resolve) => setTimeout(resolve, 0));
-    expect(settled).toBe(false);
-
-    controller.abort();
-
-    await expect(workerPromise).resolves.toBeUndefined();
-    expect(clearIntervalSpy).toHaveBeenCalledOnce();
+    await expect(
+      runWorker({ signal: controller.signal, runLoop }),
+    ).resolves.toBeUndefined();
+    expect(runLoop).toHaveBeenCalledOnce();
   });
 });

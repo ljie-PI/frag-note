@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'bun:test';
 import { buildApp } from '../../../apps/api/src/app.js';
+import { createTestRuntime } from '../support/test-runtime.js';
 
 describe('POST /v1/auth/device-session', () => {
   it('returns 201 with a new user and device session identity', async () => {
-    const app = buildApp();
+    const app = buildApp({ runtime: createTestRuntime() });
 
     const response = await app.inject({
       method: 'POST',
@@ -26,7 +27,7 @@ describe('POST /v1/auth/device-session', () => {
   });
 
   it('rejects unexpected request body fields', async () => {
-    const app = buildApp();
+    const app = buildApp({ runtime: createTestRuntime() });
 
     const response = await app.inject({
       method: 'POST',
@@ -42,7 +43,7 @@ describe('POST /v1/auth/device-session', () => {
   });
 
   it('rejects a null request body', async () => {
-    const app = buildApp();
+    const app = buildApp({ runtime: createTestRuntime() });
 
     const response = await app.inject({
       method: 'POST',

@@ -1,5 +1,4 @@
 import {
-  createDeviceSessionRequestSchema,
   createDeviceSessionResponseSchema,
   type CreateDeviceSessionResponse,
 } from '@sui-note/contracts/auth';
@@ -31,33 +30,13 @@ export function createAuthClient({
   baseUrl,
   fetchImpl,
 }: CreateAuthClientOptions) {
-  const supabaseUrl = readEnv('VITE_SUPABASE_URL');
-  const supabaseAnonKey = readEnv('VITE_SUPABASE_ANON_KEY');
+  void baseUrl;
+  void fetchImpl;
 
-  if (supabaseUrl && supabaseAnonKey) {
-    return createSupabaseAuthClient(supabaseUrl, supabaseAnonKey);
-  }
+  const supabaseUrl = requiredEnv('VITE_SUPABASE_URL');
+  const supabaseAnonKey = requiredEnv('VITE_SUPABASE_ANON_KEY');
 
-  return {
-    async createDeviceSession(signal?: unknown): Promise<CreateDeviceSessionResponse> {
-      const response = await fetchImpl(`${baseUrl}/v1/auth/device-session`, {
-        method: 'POST',
-        headers: {
-          'content-type': 'application/json',
-        },
-        body: JSON.stringify(createDeviceSessionRequestSchema.parse({})),
-        signal,
-      });
-
-      if (!response.ok) {
-        throw new Error(
-          `Failed to create device session: HTTP ${response.status}`,
-        );
-      }
-
-      return createDeviceSessionResponseSchema.parse(await response.json());
-    },
-  };
+  return createSupabaseAuthClient(supabaseUrl, supabaseAnonKey);
 }
 
 function createSupabaseAuthClient(url: string, anonKey: string) {
@@ -78,6 +57,16 @@ function createSupabaseAuthClient(url: string, anonKey: string) {
 function readEnv(name: string): string | null {
   const value = import.meta.env?.[name];
   return typeof value === 'string' && value.length > 0 ? value : null;
+}
+
+function requiredEnv(name: string): string {
+  const value = readEnv(name);
+
+  if (!value) {
+    throw new Error(`${name} is required for Supabase auth`);
+  }
+
+  return value;
 }
 
 function tokenToPseudoUuid(token: string | undefined) {

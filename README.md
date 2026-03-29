@@ -8,12 +8,24 @@ An AI-powered note-taking app for capturing fragmented notes anytime, anywhere. 
 
 ## Quick Start
 
-The easiest way to run the project today is the local in-memory mode. In this
-mode, the desktop app talks to a local API server on `http://127.0.0.1:3000`
-and you do not need Supabase credentials.
+This project now runs in `Supabase-only` mode. The API, worker, and desktop app
+all expect Supabase configuration. There is no local in-memory fallback runtime.
 
 ```bash
 bun install
+```
+
+Export your Supabase and AI environment first:
+
+```bash
+export SUPABASE_URL="https://<project>.supabase.co"
+export SUPABASE_ANON_KEY="<anon-key>"
+export SUPABASE_SERVICE_ROLE_KEY="<service-role-key>"
+export SUPABASE_STORAGE_RAW_BUCKET="captures-raw"
+export SUPABASE_STORAGE_DERIVED_BUCKET="captures-derived"
+export OPENAI_API_KEY="<optional-openai-key>"
+export VITE_SUPABASE_URL="$SUPABASE_URL"
+export VITE_SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY"
 ```
 
 Terminal 1, start the API:
@@ -23,7 +35,13 @@ bun run --filter @sui-note/api build
 bun run --filter @sui-note/api start
 ```
 
-Terminal 2, start the desktop UI in the browser:
+Terminal 2, start the worker:
+
+```bash
+bun run --filter @sui-note/api start:worker
+```
+
+Terminal 3, start the desktop UI in the browser:
 
 ```bash
 bun run --filter @sui-note/desktop dev
@@ -34,40 +52,6 @@ Optional, start the native Tauri shell instead of the browser UI:
 ```bash
 bun run --filter @sui-note/desktop tauri:dev
 ```
-
-## Supabase Mode
-
-If you want to run the Supabase-backed path, set these environment variables
-before starting the API and worker:
-
-```bash
-export SUPABASE_URL="https://<project>.supabase.co"
-export SUPABASE_ANON_KEY="<anon-key>"
-export SUPABASE_SERVICE_ROLE_KEY="<service-role-key>"
-export SUPABASE_STORAGE_RAW_BUCKET="captures-raw"
-export SUPABASE_STORAGE_DERIVED_BUCKET="captures-derived"
-export OPENAI_API_KEY="<optional-openai-key>"
-```
-
-Then start the API and worker in separate terminals:
-
-```bash
-bun run --filter @sui-note/api build
-bun run --filter @sui-note/api start
-bun run --filter @sui-note/api start:worker
-```
-
-To make the desktop app talk directly to Supabase, expose the Vite variables
-before launching the desktop UI:
-
-```bash
-export VITE_SUPABASE_URL="$SUPABASE_URL"
-export VITE_SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY"
-bun run --filter @sui-note/desktop dev
-```
-
-If `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` are not set, the desktop app
-falls back to the local API at `http://127.0.0.1:3000`.
 
 ## Common Commands
 
@@ -103,7 +87,7 @@ bun run --filter @sui-note/desktop test
 
 ## Notes
 
-- The default local mode uses the in-memory runtime; it is the fastest way to
-  verify the main flows without external services.
-- The worker is only required for the Supabase-backed processing path.
+- Missing Supabase environment variables now cause startup failures by design.
+- The worker is part of the default runtime and should be running for background
+  processing.
 - On Linux, `tauri:dev` may require extra GTK/WebKit packages from your distro.

@@ -6,7 +6,10 @@ import {
   type LocalFragmentRecord,
 } from '../features/capture/capture-store.ts';
 import { createSyncService } from '../features/sync/sync-service.ts';
-import { createDesktopApiClient } from '../lib/api-client.ts';
+import {
+  createDesktopApiClient,
+  type ExtendedDesktopApiClient,
+} from '../lib/api-client.ts';
 import { createDesktopAdapter } from '../lib/desktop-adapter.ts';
 import { RecentFragmentsPage } from './routes/recent-fragments.tsx';
 import { FragmentDetailPage } from './routes/fragment-detail.tsx';
@@ -14,10 +17,17 @@ import { OrganizationPage } from './routes/organization.tsx';
 import { DerivedObjectDetailPage } from './routes/derived-object-detail.tsx';
 import { SearchPage } from './routes/search.tsx';
 
-export function App() {
+type AppProps = {
+  apiClient?: ExtendedDesktopApiClient;
+};
+
+export function App({ apiClient: providedApiClient }: AppProps = {}) {
   const adapter = useMemo(() => createDesktopAdapter(), []);
   const store = useMemo(() => createCaptureStore({ adapter }), [adapter]);
-  const apiClient = useMemo(() => createDesktopApiClient(), []);
+  const apiClient = useMemo(
+    () => providedApiClient ?? createDesktopApiClient(),
+    [providedApiClient],
+  );
   const syncService = useMemo(
     () => createSyncService({ store, apiClient }),
     [apiClient, store],

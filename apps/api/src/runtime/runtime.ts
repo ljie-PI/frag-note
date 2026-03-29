@@ -20,7 +20,7 @@ export type SaveAnswerResult = {
 };
 
 export interface ApiRuntime {
-  mode: 'in-memory' | 'supabase';
+  mode: 'supabase';
   createDeviceSession(): Promise<CreateDeviceSessionResponse>;
   listFragments(): Promise<Fragment[]>;
   getFragmentDetail(fragmentId: string): Promise<FragmentDetail | null>;
