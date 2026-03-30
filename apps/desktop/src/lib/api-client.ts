@@ -46,12 +46,18 @@ export type ExtendedDesktopApiClient = DesktopApiClient & {
 export function createDesktopApiClient(): ExtendedDesktopApiClient {
   const supabaseUrl = requiredEnv('VITE_SUPABASE_URL');
   const supabaseAnonKey = requiredEnv('VITE_SUPABASE_ANON_KEY');
+  const apiBaseUrl = optionalEnv('VITE_API_BASE_URL');
 
-  return createSupabaseDesktopApiClient(supabaseUrl, supabaseAnonKey);
+  return createSupabaseDesktopApiClient(supabaseUrl, supabaseAnonKey, apiBaseUrl);
 }
 
-function createSupabaseDesktopApiClient(url: string, anonKey: string) {
+function createSupabaseDesktopApiClient(
+  url: string,
+  anonKey: string,
+  apiBaseUrl: string | null,
+) {
   const supabase = createBrowserSupabaseClient(url, anonKey);
+  const normalizedApiBaseUrl = normalizeBaseUrl(apiBaseUrl);
 
   return {
     async ingestFragment(payload) {
@@ -154,6 +160,16 @@ function createSupabaseDesktopApiClient(url: string, anonKey: string) {
       return response.data as DerivedObject;
     },
     async search(input) {
+      if (normalizedApiBaseUrl) {
+        return invokeApiRoute<AnswerArtifact>(
+          normalizedApiBaseUrl,
+          '/v1/search',
+          input,
+          url,
+          anonKey,
+        );
+      }
+
       const response = await supabase.functions.invoke('search-query', {
         body: input,
       });
@@ -161,6 +177,20 @@ function createSupabaseDesktopApiClient(url: string, anonKey: string) {
       return response.data as AnswerArtifact;
     },
     async saveAnswerAsFragment(answerId, input) {
+      if (normalizedApiBaseUrl) {
+        return invokeApiRoute<AnswerPromotionResult>(
+          normalizedApiBaseUrl,
+          `/v1/answers/${answerId}/save-as-fragment`,
+          {
+            originKind: 'answer_promotion',
+            sourceQuery: input.sourceQuery,
+            citedFragmentIds: input.citedFragmentIds,
+          },
+          url,
+          anonKey,
+        );
+      }
+
       const response = await supabase.functions.invoke('promote-answer', {
         body: {
           answerId,
@@ -450,6 +480,42 @@ function requiredEnv(name: string): string {
   }
 
   return value;
+}
+
+function optionalEnv(name: string): string | null {
+  return readEnv(name);
+}
+
+function normalizeBaseUrl(value: string | null): string | null {
+  if (!value) {
+    return null;
+  }
+
+  return value.endsWith('/') ? value.slice(0, -1) : value;
+}
+
+async function invokeApiRoute<T>(
+  baseUrl: string,
+  path: string,
+  payload: unknown,
+  supabaseUrl: string,
+  supabaseAnonKey: string,
+): Promise<T> {
+  const session = await readSupabaseSessionSnapshot(supabaseUrl, supabaseAnonKey);
+  const response = await fetch(`${baseUrl}${path}`, {
+    method: 'POST',
+    headers: {
+      authorization: `Bearer ${session.accessToken}`,
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    throw new Error(await response.text());
+  }
+
+  return (await response.json()) as T;
 }
 
 function createUuid() {

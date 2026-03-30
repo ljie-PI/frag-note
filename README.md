@@ -25,7 +25,6 @@ There is no local in-memory runtime fallback.
 If `bun install` appears to hang behind a local proxy, unset proxy variables and retry:
 
 ```bash
-unset HTTP_PROXY HTTPS_PROXY http_proxy https_proxy ALL_PROXY all_proxy
 bun install
 ```
 
@@ -37,7 +36,13 @@ Copy the example file first:
 cp .env.example .env
 ```
 
-Then load it from your shell:
+For cross-platform usage (including Windows), run commands through Bun with an explicit env file:
+
+```bash
+bun --env-file=.env run <command>
+```
+
+If you still want to load variables into the current shell on macOS/Linux:
 
 ```bash
 source .env
@@ -63,6 +68,7 @@ Variables currently used on `main`:
 - Desktop frontend:
   - `VITE_SUPABASE_URL`
   - `VITE_SUPABASE_ANON_KEY`
+  - `VITE_API_BASE_URL`
 
 Example exports:
 
@@ -83,6 +89,7 @@ export OPENAI_TRANSCRIPTION_MODEL="gpt-4o-mini-transcribe"
 export OPENAI_OCR_MODEL="gpt-4.1-mini"
 export VITE_SUPABASE_URL="$SUPABASE_URL"
 export VITE_SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY"
+export VITE_API_BASE_URL="http://127.0.0.1:3000"
 ```
 
 ## Supabase Setup
@@ -106,23 +113,15 @@ supabase functions deploy device-session
 supabase functions deploy capture-fragment
 supabase functions deploy retry-fragment
 supabase functions deploy review-derived-object
-supabase functions deploy search-query
-supabase functions deploy promote-answer
 ```
 
-4. Set function secrets.
+4. Set function secrets (for the active Edge Functions above).
 
 ```bash
 supabase secrets set \
   SUPABASE_URL="$SUPABASE_URL" \
   SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY" \
-  SUPABASE_SERVICE_ROLE_KEY="$SUPABASE_SERVICE_ROLE_KEY" \
-  OPENAI_API_KEY="$OPENAI_API_KEY" \
-  OPENAI_BASE_URL="$OPENAI_BASE_URL" \
-  OPENAI_SUMMARY_MODEL="$OPENAI_SUMMARY_MODEL" \
-  OPENAI_EMBEDDING_MODEL="$OPENAI_EMBEDDING_MODEL" \
-  OPENAI_TRANSCRIPTION_MODEL="$OPENAI_TRANSCRIPTION_MODEL" \
-  OPENAI_OCR_MODEL="$OPENAI_OCR_MODEL"
+  SUPABASE_SERVICE_ROLE_KEY="$SUPABASE_SERVICE_ROLE_KEY"
 ```
 
 Current checked-in Edge Functions read:
@@ -130,16 +129,9 @@ Current checked-in Edge Functions read:
 - `SUPABASE_URL`
 - `SUPABASE_ANON_KEY`
 - `SUPABASE_SERVICE_ROLE_KEY`
-- `OPENAI_API_KEY`
-- `OPENAI_BASE_URL`
-- `OPENAI_SUMMARY_MODEL`
-- `OPENAI_EMBEDDING_MODEL`
-- `OPENAI_TRANSCRIPTION_MODEL`
-- `OPENAI_OCR_MODEL`
 
-`SUPABASE_STORAGE_RAW_BUCKET`, `SUPABASE_STORAGE_DERIVED_BUCKET`, `HOST`, `PORT`, and
-`SUPABASE_DB_URL` are still relevant for the local API/worker or SQL tools, but
-they are not currently read by the checked-in Edge Functions.
+`OPENAI_*`, `SUPABASE_STORAGE_RAW_BUCKET`, `SUPABASE_STORAGE_DERIVED_BUCKET`, `HOST`,
+`PORT`, and `SUPABASE_DB_URL` are relevant for the local API/worker runtime.
 
 ## Install
 
@@ -152,26 +144,26 @@ bun install
 Terminal 1, start the API shell:
 
 ```bash
-bun run --filter @sui-note/api build
-bun run --filter @sui-note/api start
+bun --env-file=.env run --filter @sui-note/api build
+bun --env-file=.env run --filter @sui-note/api start
 ```
 
 Terminal 2, start the worker:
 
 ```bash
-bun run --filter @sui-note/api start:worker
+bun --env-file=.env run --filter @sui-note/api start:worker
 ```
 
 Terminal 3, start the desktop UI in the browser:
 
 ```bash
-bun run --filter @sui-note/desktop dev
+bun --env-file=.env run --filter @sui-note/desktop dev
 ```
 
 Optional, start the native desktop shell:
 
 ```bash
-bun run --filter @sui-note/desktop tauri:dev
+bun --env-file=.env run --filter @sui-note/desktop tauri:dev
 ```
 
 ## Common Commands
@@ -185,19 +177,19 @@ bun run build
 Run all tests:
 
 ```bash
-bun test ./tests
+bun run test
 ```
 
 Run API tests only:
 
 ```bash
-bun run --filter @sui-note/api test
+bun --env-file=.env run --filter @sui-note/api test
 ```
 
 Run desktop tests only:
 
 ```bash
-bun run --filter @sui-note/desktop test
+bun --env-file=.env run --filter @sui-note/desktop test
 ```
 
 ## Production Notes
