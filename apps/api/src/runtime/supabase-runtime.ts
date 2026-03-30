@@ -1,12 +1,12 @@
 import { randomUUID } from 'node:crypto';
 import type { AnswerArtifact, DerivedObject, Fragment, Relation } from '@sui-note/domain';
 import type { CreateDeviceSessionResponse } from '@sui-note/contracts/auth';
-import { createEmbeddingVector } from '../lib/openai-client.js';
 import type { RequestAuthContext } from '../lib/request-auth.js';
 import {
   buildDerivedArtifactsForFragmentAsync,
 } from '../services/derived-artifacts.js';
 import { extractFragmentSearchText } from '../services/fragment-content.js';
+import { buildDeterministicQueryEmbedding } from '../services/search/query-embedding.js';
 import { buildUpdateSuggestions } from '../services/object-candidates/update-suggestions.js';
 import { buildEntityCandidates } from '../services/object-candidates/entity-candidate-service.js';
 import { buildProjectCandidates } from '../services/object-candidates/project-candidate-service.js';
@@ -377,9 +377,7 @@ export function createSupabaseRuntime(): ApiRuntime {
           }),
       );
       const queryTokens = tokenizeText(input.queryText);
-      const queryEmbedding =
-        (await createEmbeddingVector(input.queryText)) ??
-        queryTokens.map((token, index) => token.length + index);
+      const queryEmbedding = buildDeterministicQueryEmbedding(queryTokens);
       const ranked = fragments
         .map((fragment) => ({
           fragment,
