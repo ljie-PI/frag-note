@@ -249,7 +249,7 @@ export function App({ apiClient: providedApiClient }: AppProps = {}) {
 
       {/* Main content */}
       <main className="flex-1 overflow-y-auto relative">
-        <div className={`absolute inset-0 ${activeView === 'capture' ? 'capture-bg' : 'bg-slate-50'}`} />
+        <div className="absolute inset-0 capture-bg" />
 
         <div className="relative h-full">
           {activeView === 'capture' ? (
