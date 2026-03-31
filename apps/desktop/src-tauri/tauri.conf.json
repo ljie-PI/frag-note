@@ -22,7 +22,7 @@
         "title": "快速记录",
         "url": "/quick-capture.html",
         "width": 600,
-        "height": 180,
+        "height": 240,
         "decorations": false,
         "transparent": true,
         "alwaysOnTop": true,

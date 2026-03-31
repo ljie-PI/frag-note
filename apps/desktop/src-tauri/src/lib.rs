@@ -146,7 +146,7 @@ pub fn run() {
                     let logical_w = screen.width as f64 / scale;
                     let logical_h = screen.height as f64 / scale;
                     let win_w = 600.0;
-                    let win_h = 180.0;
+                    let win_h = 240.0;
                     let x = (logical_w - win_w) / 2.0;
                     let y = logical_h - win_h - 48.0;
                     let _ = win.set_position(tauri::Position::Logical(tauri::LogicalPosition::new(x, y)));

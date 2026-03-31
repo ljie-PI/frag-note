@@ -71,7 +71,10 @@ export function QuickCapture() {
   }, [hideWindow]);
 
   return (
-    <div className="p-2 capture-bg rounded-2xl overflow-hidden">
+    <div
+      className="p-2 capture-bg rounded-2xl overflow-hidden h-full"
+      onClick={() => void hideWindow()}
+    >
       <div
         className={`transition-all ease-out ${
           visible
@@ -79,6 +82,7 @@ export function QuickCapture() {
             : 'opacity-0 translate-y-3'
         }`}
         style={{ transitionDuration: `${ANIM_DURATION}ms` }}
+        onClick={(e) => e.stopPropagation()}
       >
         <CapturePalette
           ref={paletteRef}
@@ -87,6 +91,7 @@ export function QuickCapture() {
           onSaved={hideWindow}
           showGreeting={false}
           cardClassName={QC_CARD_CLASS}
+          compact
         />
       </div>
     </div>
