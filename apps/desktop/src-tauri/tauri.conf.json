@@ -12,9 +12,23 @@
   "app": {
     "windows": [
       {
+        "label": "main",
         "title": "Sui Note Desktop",
         "width": 1280,
         "height": 900
+      },
+      {
+        "label": "quick-capture",
+        "title": "快速记录",
+        "url": "/quick-capture.html",
+        "width": 600,
+        "height": 380,
+        "decorations": false,
+        "alwaysOnTop": true,
+        "visible": false,
+        "center": true,
+        "resizable": false,
+        "skipTaskbar": true
       }
     ]
   },
