@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { AnswerArtifact, DerivedObject } from '@sui-note/domain';
-import { PenLine, FileText, FolderKanban, Search, NotebookPen, LogOut, Minus, Square, X } from 'lucide-react';
-import { getCurrentWindow } from '@tauri-apps/api/window';
+import { PenLine, FileText, FolderKanban, Search, NotebookPen, LogOut } from 'lucide-react';
 import { CapturePalette } from '../features/capture/CapturePalette.tsx';
 import {
   createCaptureStore,
@@ -20,44 +19,6 @@ import { OrganizationPage } from './routes/organization.tsx';
 import { DerivedObjectDetailPage } from './routes/derived-object-detail.tsx';
 import { SearchPage } from './routes/search.tsx';
 import { AuthGate } from './routes/auth-gate.tsx';
-
-const isTauri = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
-
-function TitleBar() {
-  const appWindow = getCurrentWindow();
-  return (
-    <div className="h-8 flex items-center shrink-0 select-none bg-stone-100/90" data-tauri-drag-region>
-      <div className="flex items-center gap-2 ml-3 pointer-events-none" data-tauri-drag-region>
-        <NotebookPen size={14} className="text-purple-600" />
-        <span className="text-xs font-medium text-stone-500">碎记</span>
-      </div>
-      <div className="flex-1" data-tauri-drag-region />
-      <div className="flex items-center">
-        <button
-          className="w-11 h-8 inline-flex items-center justify-center text-stone-400 hover:bg-stone-200/80 transition-colors"
-          onClick={() => appWindow.minimize()}
-          type="button"
-        >
-          <Minus size={14} />
-        </button>
-        <button
-          className="w-11 h-8 inline-flex items-center justify-center text-stone-400 hover:bg-stone-200/80 transition-colors"
-          onClick={() => appWindow.toggleMaximize()}
-          type="button"
-        >
-          <Square size={11} />
-        </button>
-        <button
-          className="w-11 h-8 inline-flex items-center justify-center text-stone-400 hover:bg-red-500 hover:text-white transition-colors rounded-tr-lg"
-          onClick={() => appWindow.close()}
-          type="button"
-        >
-          <X size={14} />
-        </button>
-      </div>
-    </div>
-  );
-}
 
 type AppProps = {
   apiClient?: ExtendedDesktopApiClient;
@@ -203,43 +164,35 @@ export function App({ apiClient: providedApiClient }: AppProps = {}) {
   if (!apiClient || !syncService) {
     if (!authClient) {
       return (
-        <div className={`h-screen flex flex-col overflow-hidden ${isTauri ? 'rounded-lg' : ''}`}>
-          {isTauri ? <TitleBar /> : null}
-          <main className="flex-1 bg-gradient-to-br from-purple-50 via-white to-slate-50 flex items-center justify-center">
-            <h1 className="text-2xl font-bold text-slate-400">碎记</h1>
-          </main>
-        </div>
+        <main className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-slate-50 flex items-center justify-center">
+          <h1 className="text-2xl font-bold text-slate-400">碎记</h1>
+        </main>
       );
     }
 
     return (
-      <div className={`h-screen flex flex-col overflow-hidden ${isTauri ? 'rounded-lg' : ''}`}>
-        {isTauri ? <TitleBar /> : null}
-        <main className="flex-1 bg-gradient-to-br from-purple-50 via-white to-slate-50 flex items-center justify-center">
-          <div className="w-full max-w-sm p-6">
-            <div className="text-center mb-8">
-              <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-purple-600 text-white mb-4"><NotebookPen size={28} /></div>
-              <h1 className="text-2xl font-bold text-slate-900">碎记</h1>
-              <p className="text-sm text-slate-500 mt-1">AI 驱动的碎片笔记</p>
-            </div>
-            <AuthGate
-              authClient={authClient}
-              onAuthenticated={async () => {
-                setIsAuthenticated(true);
-              }}
-            />
+      <main className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-slate-50 flex items-center justify-center">
+        <div className="w-full max-w-sm p-6">
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-purple-600 text-white mb-4"><NotebookPen size={28} /></div>
+            <h1 className="text-2xl font-bold text-slate-900">碎记</h1>
+            <p className="text-sm text-slate-500 mt-1">AI 驱动的碎片笔记</p>
           </div>
-        </main>
-      </div>
+          <AuthGate
+            authClient={authClient}
+            onAuthenticated={async () => {
+              setIsAuthenticated(true);
+            }}
+          />
+        </div>
+      </main>
     );
   }
 
   return (
-    <div className={`h-screen flex flex-col overflow-hidden ${isTauri ? 'rounded-lg' : ''}`}>
-      {isTauri ? <TitleBar /> : null}
-      <div className="flex-1 min-h-0 bg-slate-50 flex overflow-hidden">
-        {/* Sidebar */}
-        <aside className="bg-stone-100 border-r border-stone-200/80 flex flex-col shrink-0" style={{ width: sidebarWidth }}>
+    <div className="min-h-screen bg-slate-50 flex">
+      {/* Sidebar */}
+      <aside className="bg-stone-100 border-r border-stone-200/80 flex flex-col shrink-0" style={{ width: sidebarWidth }}>
         <div className="px-5 py-5 border-b border-stone-200/60">
           <h1 className="text-lg font-bold text-stone-800 flex items-center gap-2">
             <span className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-purple-600 text-white"><NotebookPen size={16} /></span>
@@ -345,7 +298,6 @@ export function App({ apiClient: providedApiClient }: AppProps = {}) {
           ) : null}
         </div>
       </main>
-      </div>
     </div>
   );
 }

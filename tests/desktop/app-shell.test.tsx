@@ -1,15 +1,7 @@
-import { describe, expect, it, mock } from 'bun:test';
+import { describe, expect, it } from 'bun:test';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { App } from '../../apps/desktop/src/app/App.tsx';
 import type { ExtendedDesktopApiClient } from '../../apps/desktop/src/lib/api-client.ts';
-
-mock.module('@tauri-apps/api/window', () => ({
-  getCurrentWindow: () => ({
-    minimize: async () => {},
-    toggleMaximize: async () => {},
-    close: async () => {},
-  }),
-}));
 
 function createDesktopApiClientStub(): ExtendedDesktopApiClient {
   return {
