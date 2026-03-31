@@ -71,7 +71,7 @@ export function QuickCapture() {
   }, [hideWindow]);
 
   return (
-    <div className="p-2">
+    <div className="p-2 capture-bg rounded-2xl overflow-hidden">
       <div
         className={`transition-all ease-out ${
           visible
