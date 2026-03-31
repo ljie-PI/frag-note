@@ -41,7 +41,7 @@ fn simulate_ctrl_c() {
 }
 
 /// Grab the currently selected text from any application.
-/// Clears clipboard, simulates Ctrl+C, polls for up to 1s.
+/// Clears clipboard, simulates Ctrl+C, polls for up to 500ms.
 fn grab_selection() -> String {
     let Ok(mut clipboard) = arboard::Clipboard::new() else {
         return String::new();
@@ -54,17 +54,20 @@ fn grab_selection() -> String {
     // Simulate Ctrl+C
     simulate_ctrl_c();
 
-    // Poll clipboard every 50ms for up to 1s
+    // Give the target app time to process Ctrl+C
+    std::thread::sleep(Duration::from_millis(80));
+
+    // Poll clipboard every 50ms for up to 500ms
     let start = Instant::now();
     let mut selected = String::new();
-    while start.elapsed() < Duration::from_millis(1000) {
-        std::thread::sleep(Duration::from_millis(50));
+    while start.elapsed() < Duration::from_millis(500) {
         if let Ok(text) = clipboard.get_text() {
             if !text.is_empty() {
                 selected = text;
                 break;
             }
         }
+        std::thread::sleep(Duration::from_millis(50));
     }
 
     // Restore original clipboard
@@ -92,21 +95,37 @@ pub fn run() {
                         return;
                     }
 
-                    let payload = if *shortcut == alt_shift_c {
-                        let text = grab_selection();
-                        QuickCapturePayload { mode: "clipboard".into(), text }
-                    } else if *shortcut == alt_shift_s {
-                        QuickCapturePayload { mode: "screenshot".into(), text: String::new() }
-                    } else if *shortcut == alt_shift_v {
-                        QuickCapturePayload { mode: "voice".into(), text: String::new() }
+                    if *shortcut == alt_shift_c {
+                        // Show window immediately for responsiveness
+                        if let Some(win) = app.get_webview_window("quick-capture") {
+                            let _ = win.show();
+                            let _ = win.set_focus();
+                        }
+                        // Grab selection in background thread, then emit
+                        let app_handle = app.clone();
+                        std::thread::spawn(move || {
+                            let text = grab_selection();
+                            if let Some(win) = app_handle.get_webview_window("quick-capture") {
+                                let _ = win.emit("quick-capture", QuickCapturePayload {
+                                    mode: "clipboard".into(),
+                                    text,
+                                });
+                            }
+                        });
                     } else {
-                        return;
-                    };
+                        let payload = if *shortcut == alt_shift_s {
+                            QuickCapturePayload { mode: "screenshot".into(), text: String::new() }
+                        } else if *shortcut == alt_shift_v {
+                            QuickCapturePayload { mode: "voice".into(), text: String::new() }
+                        } else {
+                            return;
+                        };
 
-                    if let Some(win) = app.get_webview_window("quick-capture") {
-                        let _ = win.show();
-                        let _ = win.set_focus();
-                        let _ = win.emit("quick-capture", payload);
+                        if let Some(win) = app.get_webview_window("quick-capture") {
+                            let _ = win.show();
+                            let _ = win.set_focus();
+                            let _ = win.emit("quick-capture", payload);
+                        }
                     }
                 })
                 .build(),
@@ -127,7 +146,7 @@ pub fn run() {
                     let logical_w = screen.width as f64 / scale;
                     let logical_h = screen.height as f64 / scale;
                     let win_w = 600.0;
-                    let win_h = 300.0;
+                    let win_h = 180.0;
                     let x = (logical_w - win_w) / 2.0;
                     let y = logical_h - win_h - 48.0;
                     let _ = win.set_position(tauri::Position::Logical(tauri::LogicalPosition::new(x, y)));
