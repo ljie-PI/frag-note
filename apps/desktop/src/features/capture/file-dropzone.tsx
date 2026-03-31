@@ -34,7 +34,7 @@ export function FileDropzone({
 
   return (
     <div
-      className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 transition-colors hover:border-purple-300 focus-within:border-purple-400 focus-within:ring-2 focus-within:ring-purple-100"
+      className="bg-white/70 backdrop-blur-xl rounded-2xl border border-white/80 shadow-lg p-5 transition-colors hover:border-purple-200 focus-within:border-purple-300 focus-within:ring-2 focus-within:ring-purple-100"
       onDragOver={(event) => {
         event.preventDefault();
       }}

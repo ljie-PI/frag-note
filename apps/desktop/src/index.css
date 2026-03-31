@@ -3,3 +3,16 @@
 html, body, #root {
   height: 100%;
 }
+
+/* Warm nature-inspired background for capture view */
+.capture-bg {
+  background:
+    /* Soft bokeh circles */
+    radial-gradient(ellipse 120px 120px at 15% 25%, rgba(167, 210, 155, 0.35) 0%, transparent 70%),
+    radial-gradient(ellipse 90px 90px at 75% 20%, rgba(250, 220, 140, 0.3) 0%, transparent 70%),
+    radial-gradient(ellipse 150px 150px at 85% 75%, rgba(167, 210, 155, 0.25) 0%, transparent 70%),
+    radial-gradient(ellipse 100px 100px at 30% 80%, rgba(180, 210, 240, 0.25) 0%, transparent 70%),
+    radial-gradient(ellipse 70px 70px at 55% 45%, rgba(250, 235, 170, 0.2) 0%, transparent 70%),
+    /* Base warm gradient */
+    linear-gradient(145deg, #e8f0e4 0%, #dfe9f0 30%, #f5efe4 60%, #e4ebd8 100%);
+}

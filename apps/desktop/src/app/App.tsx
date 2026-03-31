@@ -154,10 +154,10 @@ export function App({ apiClient: providedApiClient }: AppProps = {}) {
   return (
     <div className="min-h-screen bg-slate-50 flex">
       {/* Sidebar */}
-      <aside className="w-56 bg-white border-r border-slate-200 flex flex-col">
-        <div className="px-5 py-5 border-b border-slate-100">
-          <h1 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-            <span className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-purple-600 text-white"><NotebookPen size={16} /></span>
+      <aside className="w-56 bg-slate-900 flex flex-col">
+        <div className="px-5 py-5 border-b border-slate-700/50">
+          <h1 className="text-lg font-bold text-white flex items-center gap-2">
+            <span className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-purple-500 text-white"><NotebookPen size={16} /></span>
             碎记
           </h1>
         </div>
@@ -167,8 +167,8 @@ export function App({ apiClient: providedApiClient }: AppProps = {}) {
               key={item.key}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
                 activeView === item.key
-                  ? 'bg-purple-50 text-purple-700'
-                  : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                  ? 'bg-white/10 text-white'
+                  : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
               }`}
               onClick={() => setActiveView(item.key)}
               type="button"
@@ -176,18 +176,18 @@ export function App({ apiClient: providedApiClient }: AppProps = {}) {
               {NAV_ICONS[item.key]}
               {item.label}
               {item.key === 'fragments' && records.length > 0 ? (
-                <span className="ml-auto text-xs bg-slate-200 text-slate-600 rounded-full px-2 py-0.5">{records.length}</span>
+                <span className="ml-auto text-xs bg-slate-700 text-slate-300 rounded-full px-2 py-0.5">{records.length}</span>
               ) : null}
               {item.key === 'organization' && candidates.length > 0 ? (
-                <span className="ml-auto text-xs bg-purple-100 text-purple-600 rounded-full px-2 py-0.5">{candidates.length}</span>
+                <span className="ml-auto text-xs bg-purple-500/30 text-purple-300 rounded-full px-2 py-0.5">{candidates.length}</span>
               ) : null}
             </button>
           ))}
         </nav>
         {authClient ? (
-          <div className="px-3 py-4 border-t border-slate-100">
+          <div className="px-3 py-4 border-t border-slate-700/50">
             <button
-              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-slate-500 hover:bg-slate-50 hover:text-slate-700 transition-colors"
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-slate-500 hover:bg-white/5 hover:text-slate-300 transition-colors"
               onClick={async () => {
                 await authClient.signOut();
                 setIsAuthenticated(false);
@@ -205,11 +205,7 @@ export function App({ apiClient: providedApiClient }: AppProps = {}) {
 
       {/* Main content */}
       <main className="flex-1 overflow-y-auto relative">
-        {/* Background decoration */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute -top-24 -right-24 w-96 h-96 rounded-full bg-purple-100/40 blur-3xl" />
-          <div className="absolute -bottom-24 -left-24 w-80 h-80 rounded-full bg-purple-50/60 blur-3xl" />
-        </div>
+        <div className={`absolute inset-0 ${activeView === 'capture' ? 'capture-bg' : 'bg-slate-50'}`} />
 
         <div className="relative h-full">
           {activeView === 'capture' ? (
