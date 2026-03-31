@@ -7,11 +7,13 @@ export function FileDropzone({
   onAddAsset,
   children,
   cardClassName,
+  fillHeight,
 }: {
   assets: LocalAssetPointer[];
   onAddAsset: (asset: LocalAssetPointer) => void;
   children?: ReactNode;
   cardClassName?: string;
+  fillHeight?: boolean;
 }) {
   const inputRef = useRef<HTMLInputElement | null>(null);
 
@@ -36,7 +38,7 @@ export function FileDropzone({
 
   return (
     <div
-      className={cardClassName ?? "bg-white/70 backdrop-blur-xl rounded-2xl border border-white/80 shadow-lg p-5 transition-colors hover:border-purple-200 focus-within:border-purple-300 focus-within:ring-2 focus-within:ring-purple-100"}
+      className={`${cardClassName ?? "bg-white/70 backdrop-blur-xl rounded-2xl border border-white/80 shadow-lg p-5 transition-colors hover:border-purple-200 focus-within:border-purple-300 focus-within:ring-2 focus-within:ring-purple-100"}${fillHeight ? ' h-full flex flex-col' : ''}`}
       onDragOver={(event) => {
         event.preventDefault();
       }}

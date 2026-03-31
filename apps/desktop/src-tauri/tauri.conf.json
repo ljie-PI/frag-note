@@ -15,7 +15,10 @@
         "label": "main",
         "title": "Sui Note Desktop",
         "width": 1280,
-        "height": 900
+        "height": 900,
+        "decorations": false,
+        "transparent": true,
+        "shadow": false
       },
       {
         "label": "quick-capture",
@@ -25,6 +28,7 @@
         "height": 240,
         "decorations": false,
         "transparent": true,
+        "shadow": false,
         "alwaysOnTop": true,
         "visible": false,
         "resizable": false,
