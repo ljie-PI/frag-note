@@ -26,10 +26,11 @@ type CapturePaletteProps = {
   onSaved: () => Promise<void>;
   showGreeting?: boolean;
   cardClassName?: string;
+  compact?: boolean;
 };
 
 export const CapturePalette = forwardRef<CapturePaletteRef, CapturePaletteProps>(
-  function CapturePalette({ store, syncService, onSaved, showGreeting = true, cardClassName }, ref) {
+  function CapturePalette({ store, syncService, onSaved, showGreeting = true, cardClassName, compact = false }, ref) {
     const [rawText, setRawText] = useState('');
     const [busy, setBusy] = useState(false);
     const [assets, setAssets] = useState<LocalAssetPointer[]>([]);
@@ -110,7 +111,7 @@ export const CapturePalette = forwardRef<CapturePaletteRef, CapturePaletteProps>
           <textarea
             ref={textareaRef}
             aria-label="随便写点什么..."
-            className="w-full bg-transparent text-base text-slate-800 placeholder:text-slate-400 outline-none resize-none min-h-[120px]"
+            className={`w-full bg-transparent text-base text-slate-800 placeholder:text-slate-400 outline-none resize-none ${compact ? 'min-h-[60px]' : 'min-h-[120px]'}`}
             placeholder="随便写点什么..."
             value={rawText}
             onChange={(event) => setRawText(event.target.value)}
