@@ -27,10 +27,11 @@ type CapturePaletteProps = {
   showGreeting?: boolean;
   cardClassName?: string;
   compact?: boolean;
+  fillHeight?: boolean;
 };
 
 export const CapturePalette = forwardRef<CapturePaletteRef, CapturePaletteProps>(
-  function CapturePalette({ store, syncService, onSaved, showGreeting = true, cardClassName, compact = false }, ref) {
+  function CapturePalette({ store, syncService, onSaved, showGreeting = true, cardClassName, compact = false, fillHeight = false }, ref) {
     const [rawText, setRawText] = useState('');
     const [busy, setBusy] = useState(false);
     const [assets, setAssets] = useState<LocalAssetPointer[]>([]);
@@ -98,20 +99,32 @@ export const CapturePalette = forwardRef<CapturePaletteRef, CapturePaletteProps>
       }
     };
 
+    const textareaClass = fillHeight
+      ? 'w-full bg-transparent text-base text-slate-800 placeholder:text-slate-400 outline-none resize-none flex-1'
+      : compact
+        ? 'w-full bg-transparent text-base text-slate-800 placeholder:text-slate-400 outline-none resize-none min-h-[60px]'
+        : 'w-full bg-transparent text-base text-slate-800 placeholder:text-slate-400 outline-none resize-none';
+
+    const textareaStyle = !fillHeight && !compact
+      ? { minHeight: 'clamp(120px, 18vh, 180px)' }
+      : undefined;
+
     const form = (
       <form
-        className="w-full max-w-2xl"
+        className={`w-full ${fillHeight ? 'h-full flex flex-col' : ''}`}
         onSubmit={(event) => void handleSubmit(event)}
       >
         <FileDropzone
           assets={assets}
           onAddAsset={addAsset}
           cardClassName={cardClassName}
+          fillHeight={fillHeight}
         >
           <textarea
             ref={textareaRef}
             aria-label="随便写点什么..."
-            className={`w-full bg-transparent text-base text-slate-800 placeholder:text-slate-400 outline-none resize-none ${compact ? 'min-h-[60px]' : 'min-h-[120px]'}`}
+            className={textareaClass}
+            style={textareaStyle}
             placeholder="随便写点什么..."
             value={rawText}
             onChange={(event) => setRawText(event.target.value)}
@@ -119,7 +132,7 @@ export const CapturePalette = forwardRef<CapturePaletteRef, CapturePaletteProps>
 
           {/* Asset list inside card */}
           {assets.length > 0 ? (
-            <div className="mt-2 flex flex-wrap gap-2">
+            <div className={`mt-2 flex flex-wrap gap-2 ${fillHeight ? 'overflow-y-auto max-h-[40px] shrink-0' : ''}`}>
               {assets.map((asset) => (
                 <span
                   className="inline-flex items-center gap-1 rounded-full bg-purple-100/60 text-purple-700 text-xs px-3 py-1"
@@ -133,7 +146,7 @@ export const CapturePalette = forwardRef<CapturePaletteRef, CapturePaletteProps>
           ) : null}
 
           {/* Toolbar inside card */}
-          <div className="mt-3 pt-3 border-t border-slate-200/60 flex items-center justify-between">
+          <div className="mt-3 pt-3 border-t border-slate-200/60 flex items-center justify-between shrink-0">
             <div className="flex items-center gap-1">
               <FileDropzone.PickerButton
                 onClick={() => document.getElementById('capture-file-input')?.click()}

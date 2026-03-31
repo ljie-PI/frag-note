@@ -76,7 +76,7 @@ export function QuickCapture() {
       onClick={() => void hideWindow()}
     >
       <div
-        className={`transition-all ease-out ${
+        className={`transition-all ease-out h-full ${
           visible
             ? 'opacity-100 translate-y-0'
             : 'opacity-0 translate-y-3'
@@ -92,6 +92,7 @@ export function QuickCapture() {
           showGreeting={false}
           cardClassName={QC_CARD_CLASS}
           compact
+          fillHeight
         />
       </div>
     </div>

@@ -19,6 +19,7 @@ import { OrganizationPage } from './routes/organization.tsx';
 import { DerivedObjectDetailPage } from './routes/derived-object-detail.tsx';
 import { SearchPage } from './routes/search.tsx';
 import { AuthGate } from './routes/auth-gate.tsx';
+import { TitleBar } from './TitleBar.tsx';
 
 type AppProps = {
   apiClient?: ExtendedDesktopApiClient;
@@ -164,33 +165,41 @@ export function App({ apiClient: providedApiClient }: AppProps = {}) {
   if (!apiClient || !syncService) {
     if (!authClient) {
       return (
-        <main className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-slate-50 flex items-center justify-center">
-          <h1 className="text-2xl font-bold text-slate-400">碎记</h1>
-        </main>
+        <div className="h-screen rounded-xl overflow-hidden bg-gradient-to-br from-purple-50 via-white to-slate-50 flex flex-col">
+          <TitleBar />
+          <main className="flex-1 flex items-center justify-center">
+            <h1 className="text-2xl font-bold text-slate-400">碎记</h1>
+          </main>
+        </div>
       );
     }
 
     return (
-      <main className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-slate-50 flex items-center justify-center">
-        <div className="w-full max-w-sm p-6">
-          <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-purple-600 text-white mb-4"><NotebookPen size={28} /></div>
-            <h1 className="text-2xl font-bold text-slate-900">碎记</h1>
-            <p className="text-sm text-slate-500 mt-1">AI 驱动的碎片笔记</p>
+      <div className="h-screen rounded-xl overflow-hidden bg-gradient-to-br from-purple-50 via-white to-slate-50 flex flex-col">
+        <TitleBar />
+        <main className="flex-1 flex items-center justify-center">
+          <div className="w-full max-w-sm p-6">
+            <div className="text-center mb-8">
+              <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-purple-600 text-white mb-4"><NotebookPen size={28} /></div>
+              <h1 className="text-2xl font-bold text-slate-900">碎记</h1>
+              <p className="text-sm text-slate-500 mt-1">AI 驱动的碎片笔记</p>
+            </div>
+            <AuthGate
+              authClient={authClient}
+              onAuthenticated={async () => {
+                setIsAuthenticated(true);
+              }}
+            />
           </div>
-          <AuthGate
-            authClient={authClient}
-            onAuthenticated={async () => {
-              setIsAuthenticated(true);
-            }}
-          />
-        </div>
-      </main>
+        </main>
+      </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex">
+    <div className="h-screen rounded-xl overflow-hidden bg-slate-50 flex flex-col">
+      <TitleBar />
+      <div className="flex flex-1 overflow-hidden">
       {/* Sidebar */}
       <aside className="bg-stone-100 border-r border-stone-200/80 flex flex-col shrink-0" style={{ width: sidebarWidth }}>
         <div className="px-5 py-5 border-b border-stone-200/60">
@@ -254,7 +263,7 @@ export function App({ apiClient: providedApiClient }: AppProps = {}) {
         <div className="relative h-full">
           {activeView === 'capture' ? (
             <div className="h-full flex items-center justify-center px-8">
-              <div className="w-full max-w-2xl">
+              <div className="w-full" style={{ maxWidth: 'clamp(672px, 55vw, 1008px)' }}>
                 <CapturePalette store={store} syncService={syncService} onSaved={refresh} />
               </div>
             </div>
@@ -298,6 +307,7 @@ export function App({ apiClient: providedApiClient }: AppProps = {}) {
           ) : null}
         </div>
       </main>
+      </div>
     </div>
   );
 }
