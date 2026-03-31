@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Camera } from 'lucide-react';
 import { invoke } from '@tauri-apps/api/core';
 import type { LocalAssetPointer } from '../storage/local-assets.ts';
 
@@ -11,6 +12,7 @@ export function ScreenshotButton({
 
   return (
     <button
+      className="inline-flex items-center justify-center w-9 h-9 rounded-full text-slate-400 hover:text-purple-600 hover:bg-purple-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
       disabled={busy}
       onClick={async () => {
         setBusy(true);
@@ -22,9 +24,10 @@ export function ScreenshotButton({
           setBusy(false);
         }
       }}
+      title="截图"
       type="button"
     >
-      {busy ? 'Capturing…' : 'Screenshot'}
+      <Camera size={18} />
     </button>
   );
 }
