@@ -15,15 +15,18 @@
         "label": "main",
         "title": "Sui Note Desktop",
         "width": 1280,
-        "height": 900
+        "height": 900,
+        "decorations": false,
+        "transparent": true
       },
       {
         "label": "quick-capture",
         "title": "快速记录",
         "url": "/quick-capture.html",
         "width": 600,
-        "height": 260,
+        "height": 300,
         "decorations": false,
+        "transparent": true,
         "alwaysOnTop": true,
         "visible": false,
         "resizable": false,

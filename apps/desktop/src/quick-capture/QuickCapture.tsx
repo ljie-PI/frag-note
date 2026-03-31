@@ -1,18 +1,17 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { listen } from '@tauri-apps/api/event';
 import { getCurrentWindow } from '@tauri-apps/api/window';
-import { Paperclip, Send, X } from 'lucide-react';
+import { Paperclip, Send } from 'lucide-react';
 import { createCaptureStore } from '../features/capture/capture-store.ts';
 import { createDesktopAdapter } from '../lib/desktop-adapter.ts';
-import { FileDropzone } from '../features/capture/file-dropzone.tsx';
-import { ScreenshotButton } from '../features/capture/screenshot-button.tsx';
 import { captureScreenshot } from '../features/capture/screenshot-button.tsx';
-import { VoiceRecorder } from '../features/capture/voice-recorder.tsx';
 import { useVoiceRecorder } from '../features/capture/use-voice-recorder.ts';
 import {
   persistLocalAssetPointer,
   type LocalAssetPointer,
 } from '../features/storage/local-assets.ts';
+
+const ANIM_DURATION = 250;
 
 export function QuickCapture() {
   const adapter = useMemo(() => createDesktopAdapter(), []);
@@ -21,7 +20,9 @@ export function QuickCapture() {
   const [rawText, setRawText] = useState('');
   const [assets, setAssets] = useState<LocalAssetPointer[]>([]);
   const [busy, setBusy] = useState(false);
+  const [visible, setVisible] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const closingRef = useRef(false);
 
   const addAsset = (asset: LocalAssetPointer) =>
     setAssets((current) => persistLocalAssetPointer(asset, current));
@@ -32,15 +33,21 @@ export function QuickCapture() {
     addAsset(asset);
   });
 
-  const hideWindow = async () => {
+  const hideWindow = useCallback(async () => {
+    if (closingRef.current) return;
+    closingRef.current = true;
+    if (recording) stopRecording();
+    setVisible(false);
+    // Wait for slide-down animation before hiding
+    await new Promise((r) => setTimeout(r, ANIM_DURATION));
     setRawText('');
     setAssets([]);
-    if (recording) stopRecording();
     await getCurrentWindow().hide();
-  };
+    closingRef.current = false;
+  }, [recording, stopRecording]);
 
-  const handleSave = async () => {
-    if (!hasContent) return;
+  const handleSave = useCallback(async () => {
+    if (!hasContent || busy) return;
     if (recording) stopRecording();
     setBusy(true);
     try {
@@ -62,18 +69,33 @@ export function QuickCapture() {
     } finally {
       setBusy(false);
     }
+  }, [hasContent, busy, recording, rawText, assets, store, hideWindow, stopRecording]);
+
+  // Auto-resize textarea
+  const adjustTextareaHeight = () => {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${Math.min(el.scrollHeight, 128)}px`;
   };
 
   // Listen for events from global shortcuts
   useEffect(() => {
     const unlisten = listen<{ mode: string; text: string }>('quick-capture', async (event) => {
       const { mode, text } = event.payload;
+      closingRef.current = false;
+
+      // Show with animation
+      setVisible(true);
 
       if (mode === 'clipboard') {
         if (text) {
           setRawText((prev) => prev ? `${prev}\n${text}` : text);
         }
-        setTimeout(() => textareaRef.current?.focus(), 100);
+        setTimeout(() => {
+          textareaRef.current?.focus();
+          adjustTextareaHeight();
+        }, 100);
       } else if (mode === 'screenshot') {
         try {
           const asset = await captureScreenshot();
@@ -96,50 +118,47 @@ export function QuickCapture() {
     };
   }, []);
 
-  // Escape to close, Ctrl+Enter to save
+  // Close on window blur (click outside)
+  useEffect(() => {
+    const unlisten = getCurrentWindow().onFocusChanged(({ payload: focused }) => {
+      if (!focused && visible && !recording) {
+        void hideWindow();
+      }
+    });
+    return () => {
+      unlisten.then((fn) => fn());
+    };
+  }, [visible, recording, hideWindow]);
+
+  // Keyboard: Escape to close, Enter to save, Shift+Enter for newline
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         void hideWindow();
       }
-      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter' && hasContent) {
+      if (e.key === 'Enter' && !e.shiftKey && hasContent && !busy) {
         e.preventDefault();
         void handleSave();
       }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [hasContent, rawText, assets]);
+  }, [hasContent, busy, hideWindow, handleSave]);
 
   return (
-    <div className="h-screen flex flex-col bg-white/90 backdrop-blur-xl rounded-xl overflow-hidden">
-      {/* Drag region / title bar */}
-      <div className="flex items-center justify-between px-4 py-2 bg-stone-50/80" data-tauri-drag-region>
-        <span className="text-sm font-medium text-stone-500" data-tauri-drag-region>快速记录</span>
-        <button
-          className="w-6 h-6 flex items-center justify-center rounded-full text-stone-400 hover:text-stone-600 hover:bg-stone-200/60 transition-colors"
-          onClick={() => void hideWindow()}
-          type="button"
-        >
-          <X size={14} />
-        </button>
-      </div>
-
-      {/* Content */}
-      <div className="flex-1 flex flex-col px-4 pb-3 overflow-hidden">
-        <FileDropzone assets={assets} onAddAsset={addAsset}>
-          <textarea
-            ref={textareaRef}
-            aria-label="快速记录"
-            className="w-full bg-transparent text-sm text-slate-800 placeholder:text-slate-400 outline-none resize-none min-h-[80px]"
-            placeholder="随便写点什么..."
-            value={rawText}
-            onChange={(e) => setRawText(e.target.value)}
-          />
-
-          {/* Assets */}
+    <div className="h-screen flex items-end justify-center px-4 pb-4">
+      <div
+        className={`w-full max-w-lg transition-all ease-out ${
+          visible
+            ? 'translate-y-0 opacity-100'
+            : 'translate-y-full opacity-0'
+        }`}
+        style={{ transitionDuration: `${ANIM_DURATION}ms` }}
+      >
+        <div className="bg-white/95 backdrop-blur-2xl rounded-2xl shadow-2xl shadow-black/15 border border-white/40 px-4 py-3">
+          {/* Asset chips */}
           {assets.length > 0 ? (
-            <div className="mt-2 flex flex-wrap gap-1.5">
+            <div className="flex flex-wrap gap-1.5 mb-2">
               {assets.map((asset) => (
                 <span
                   className="inline-flex items-center gap-1 rounded-full bg-purple-50 text-purple-700 text-xs px-2.5 py-0.5"
@@ -154,35 +173,43 @@ export function QuickCapture() {
 
           {/* Recording indicator */}
           {recording ? (
-            <div className="mt-2 flex items-center gap-2 text-xs text-red-600">
+            <div className="flex items-center gap-2 text-xs text-red-600 mb-2">
               <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-              录音中… 点击工具栏停止按钮或按 Ctrl+Enter 保存
+              录音中… 按 Enter 保存
             </div>
           ) : null}
 
-          {/* Toolbar */}
-          <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between">
-            <div className="flex items-center gap-1">
-              <FileDropzone.PickerButton
-                onClick={() => document.getElementById('capture-file-input')?.click()}
-              />
-              <ScreenshotButton onCaptured={addAsset} />
-              <VoiceRecorder onRecorded={addAsset} />
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-slate-400">Ctrl+Enter · Esc</span>
+          {/* Input area */}
+          <div className="flex items-end gap-2">
+            <textarea
+              ref={textareaRef}
+              aria-label="快速记录"
+              className="flex-1 bg-transparent text-sm text-slate-800 placeholder:text-slate-400 outline-none resize-none leading-relaxed"
+              placeholder="记点什么…"
+              rows={1}
+              value={rawText}
+              onChange={(e) => {
+                setRawText(e.target.value);
+                adjustTextareaHeight();
+              }}
+            />
+            {hasContent ? (
               <button
-                className="inline-flex items-center gap-1.5 rounded-full bg-purple-600 px-4 py-1.5 text-xs font-medium text-white shadow-sm hover:bg-purple-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-                disabled={busy || !hasContent}
+                className="shrink-0 w-7 h-7 inline-flex items-center justify-center rounded-full bg-purple-600 text-white hover:bg-purple-700 disabled:opacity-40 transition-colors"
+                disabled={busy}
                 onClick={() => void handleSave()}
                 type="button"
               >
                 <Send size={14} />
-                保存
               </button>
-            </div>
+            ) : null}
           </div>
-        </FileDropzone>
+
+          {/* Hint */}
+          <div className="text-[10px] text-stone-400 mt-1.5 select-none">
+            Enter 保存 · Shift+Enter 换行 · Esc 关闭
+          </div>
+        </div>
       </div>
     </div>
   );
