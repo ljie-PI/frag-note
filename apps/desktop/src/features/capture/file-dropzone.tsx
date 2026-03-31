@@ -1,12 +1,15 @@
-import { useRef } from 'react';
+import { useRef, type ReactNode } from 'react';
+import { Paperclip } from 'lucide-react';
 import type { LocalAssetPointer } from '../storage/local-assets.ts';
 
 export function FileDropzone({
   assets,
   onAddAsset,
+  children,
 }: {
   assets: LocalAssetPointer[];
   onAddAsset: (asset: LocalAssetPointer) => void;
+  children?: ReactNode;
 }) {
   const inputRef = useRef<HTMLInputElement | null>(null);
 
@@ -30,7 +33,8 @@ export function FileDropzone({
   };
 
   return (
-    <section
+    <div
+      className="bg-white/70 backdrop-blur-xl rounded-2xl border border-white/80 shadow-lg p-5 transition-colors hover:border-purple-200 focus-within:border-purple-300 focus-within:ring-2 focus-within:ring-purple-100"
       onDragOver={(event) => {
         event.preventDefault();
       }}
@@ -39,15 +43,10 @@ export function FileDropzone({
         void handleFiles(event.dataTransfer.files);
       }}
     >
-      <p>Drop files</p>
-      <button
-        onClick={() => inputRef.current?.click()}
-        type="button"
-      >
-        Choose Files
-      </button>
+      {children}
       <input
         hidden
+        id="capture-file-input"
         multiple
         onChange={(event) => {
           void handleFiles(event.target.files);
@@ -56,16 +55,22 @@ export function FileDropzone({
         ref={inputRef}
         type="file"
       />
-      <ul>
-        {assets.map((asset) => (
-          <li key={`${asset.localPath ?? asset.base64Data ?? asset.fileName}-${asset.fileName}`}>
-            {asset.fileName}
-          </li>
-        ))}
-      </ul>
-    </section>
+    </div>
   );
 }
+
+FileDropzone.PickerButton = function PickerButton({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      className="inline-flex items-center justify-center w-9 h-9 rounded-full text-slate-400 hover:text-purple-600 hover:bg-purple-50 transition-colors"
+      onClick={onClick}
+      title="添加文件"
+      type="button"
+    >
+      <Paperclip size={18} />
+    </button>
+  );
+};
 
 async function toBase64(file: File) {
   const bytes = new Uint8Array(await file.arrayBuffer());

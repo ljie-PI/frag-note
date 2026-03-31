@@ -21,8 +21,8 @@ export function SearchPage({
   });
 
   return (
-    <section>
-      <h2>Search</h2>
+    <section className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+      <h2 className="text-lg font-semibold text-slate-900 mb-4">搜索</h2>
       <SearchForm
         queryText={queryText}
         onChange={setQueryText}

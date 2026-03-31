@@ -14,9 +14,9 @@ export function CandidateCard({
 }) {
   return (
     <article>
-      <h3>{candidate.title}</h3>
-      <p>{candidate.summary}</p>
-      <p>Supporting fragments: {candidate.supportingFragmentIds.length}</p>
+      <h3 className="text-sm font-semibold text-slate-900">{candidate.title}</h3>
+      <p className="text-sm text-slate-600 mt-1">{candidate.summary}</p>
+      <p className="text-xs text-slate-400 mt-1">关联碎片：{candidate.supportingFragmentIds.length}</p>
       <ReviewActions
         onConfirm={onConfirm}
         onDismiss={onDismiss}

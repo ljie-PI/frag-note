@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import { Mic, MicOff } from 'lucide-react';
 import { invoke } from '@tauri-apps/api/core';
 import type { LocalAssetPointer } from '../storage/local-assets.ts';
 
@@ -13,6 +14,7 @@ export function VoiceRecorder({
 
   return (
     <button
+      className={`inline-flex items-center justify-center w-9 h-9 rounded-full transition-colors ${recording ? 'text-red-600 bg-red-50 hover:bg-red-100 animate-pulse' : 'text-slate-400 hover:text-purple-600 hover:bg-purple-50'}`}
       onClick={async () => {
         if (
           typeof navigator !== 'undefined' &&
@@ -65,9 +67,10 @@ export function VoiceRecorder({
           mimeType: 'audio/webm',
         });
       }}
+      title={recording ? '停止录音' : '录音'}
       type="button"
     >
-      {recording ? 'Stop Recording' : 'Record Voice'}
+      {recording ? <MicOff size={18} /> : <Mic size={18} />}
     </button>
   );
 }

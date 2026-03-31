@@ -41,9 +41,9 @@ describe('desktop app shell', () => {
       <App apiClient={createDesktopApiClientStub()} />,
     );
 
-    expect(markup).toContain('Save Fragment');
-    expect(markup).toContain('Recent Fragments');
-    expect(markup).toContain('Organization');
-    expect(markup).toContain('Search');
+    expect(markup).toContain('保存');
+    expect(markup).toContain('碎片');
+    expect(markup).toContain('整理');
+    expect(markup).toContain('搜索');
   });
 });
