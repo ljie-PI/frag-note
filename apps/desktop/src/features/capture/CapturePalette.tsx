@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Camera, Mic, MicOff, Paperclip, PenLine, Send } from 'lucide-react';
+import { Camera, Mic, MicOff, Paperclip, Send } from 'lucide-react';
 import type { CaptureStore } from './capture-store.ts';
 import type { ReturnTypeOfCreateSyncService } from '../sync/types.ts';
 import { FileDropzone } from './file-dropzone.tsx';
@@ -115,29 +115,6 @@ export function CapturePalette({
           </div>
         </FileDropzone>
       </form>
-
-      {/* Quick action chips */}
-      <div className="mt-5 flex flex-wrap justify-center gap-2">
-        <button
-          className="inline-flex items-center gap-1.5 rounded-full bg-white/60 backdrop-blur-sm border border-white/80 px-4 py-1.5 text-sm text-slate-600 hover:bg-white/80 hover:text-slate-800 transition-all shadow-sm"
-          onClick={() => {
-            const el = document.querySelector<HTMLTextAreaElement>('textarea[aria-label="随便写点什么..."]');
-            el?.focus();
-          }}
-          type="button"
-        >
-          <PenLine size={14} />
-          文字笔记
-        </button>
-        <button
-          className="inline-flex items-center gap-1.5 rounded-full bg-white/60 backdrop-blur-sm border border-white/80 px-4 py-1.5 text-sm text-slate-600 hover:bg-white/80 hover:text-slate-800 transition-all shadow-sm"
-          onClick={() => document.getElementById('capture-file-input')?.click()}
-          type="button"
-        >
-          <Paperclip size={14} />
-          导入文件
-        </button>
-      </div>
     </div>
   );
 }

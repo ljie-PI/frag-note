@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { AnswerArtifact, DerivedObject } from '@sui-note/domain';
 import { PenLine, FileText, FolderKanban, Search, NotebookPen, LogOut } from 'lucide-react';
 import { CapturePalette } from '../features/capture/CapturePalette.tsx';
@@ -80,6 +80,44 @@ export function App({ apiClient: providedApiClient }: AppProps = {}) {
     null,
   );
 
+  // Resizable sidebar
+  const SIDEBAR_KEY = 'sui-note:sidebar-width';
+  const [sidebarWidth, setSidebarWidth] = useState(() => {
+    try {
+      const saved = localStorage.getItem(SIDEBAR_KEY);
+      return saved ? Math.max(200, Math.min(400, Number(saved))) : 260;
+    } catch {
+      return 260;
+    }
+  });
+  const isDragging = useRef(false);
+  const handleMouseDown = useCallback(() => {
+    isDragging.current = true;
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+
+    const onMouseMove = (e: MouseEvent) => {
+      if (!isDragging.current) return;
+      const newWidth = Math.max(200, Math.min(400, e.clientX));
+      setSidebarWidth(newWidth);
+    };
+
+    const onMouseUp = () => {
+      isDragging.current = false;
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+      setSidebarWidth((w) => {
+        try { localStorage.setItem(SIDEBAR_KEY, String(w)); } catch { /* SSR */ }
+        return w;
+      });
+    };
+
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+  }, []);
+
   const refresh = async () => {
     if (!apiClient) {
       setRecords([]);
@@ -154,10 +192,10 @@ export function App({ apiClient: providedApiClient }: AppProps = {}) {
   return (
     <div className="min-h-screen bg-slate-50 flex">
       {/* Sidebar */}
-      <aside className="w-56 bg-slate-900 flex flex-col">
-        <div className="px-5 py-5 border-b border-slate-700/50">
-          <h1 className="text-lg font-bold text-white flex items-center gap-2">
-            <span className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-purple-500 text-white"><NotebookPen size={16} /></span>
+      <aside className="bg-stone-100 border-r border-stone-200/80 flex flex-col shrink-0" style={{ width: sidebarWidth }}>
+        <div className="px-5 py-5 border-b border-stone-200/60">
+          <h1 className="text-lg font-bold text-stone-800 flex items-center gap-2">
+            <span className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-purple-600 text-white"><NotebookPen size={16} /></span>
             碎记
           </h1>
         </div>
@@ -167,8 +205,8 @@ export function App({ apiClient: providedApiClient }: AppProps = {}) {
               key={item.key}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
                 activeView === item.key
-                  ? 'bg-white/10 text-white'
-                  : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
+                  ? 'bg-purple-100/70 text-purple-800'
+                  : 'text-stone-600 hover:bg-stone-200/60 hover:text-stone-800'
               }`}
               onClick={() => setActiveView(item.key)}
               type="button"
@@ -176,18 +214,18 @@ export function App({ apiClient: providedApiClient }: AppProps = {}) {
               {NAV_ICONS[item.key]}
               {item.label}
               {item.key === 'fragments' && records.length > 0 ? (
-                <span className="ml-auto text-xs bg-slate-700 text-slate-300 rounded-full px-2 py-0.5">{records.length}</span>
+                <span className="ml-auto text-xs bg-stone-300/60 text-stone-600 rounded-full px-2 py-0.5">{records.length}</span>
               ) : null}
               {item.key === 'organization' && candidates.length > 0 ? (
-                <span className="ml-auto text-xs bg-purple-500/30 text-purple-300 rounded-full px-2 py-0.5">{candidates.length}</span>
+                <span className="ml-auto text-xs bg-purple-200/60 text-purple-700 rounded-full px-2 py-0.5">{candidates.length}</span>
               ) : null}
             </button>
           ))}
         </nav>
         {authClient ? (
-          <div className="px-3 py-4 border-t border-slate-700/50">
+          <div className="px-3 py-4 border-t border-stone-200/60">
             <button
-              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-slate-500 hover:bg-white/5 hover:text-slate-300 transition-colors"
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-stone-500 hover:bg-stone-200/60 hover:text-stone-700 transition-colors"
               onClick={async () => {
                 await authClient.signOut();
                 setIsAuthenticated(false);
@@ -202,6 +240,12 @@ export function App({ apiClient: providedApiClient }: AppProps = {}) {
           </div>
         ) : null}
       </aside>
+
+      {/* Resize handle */}
+      <div
+        className="w-1 cursor-col-resize hover:bg-purple-300/50 active:bg-purple-400/50 transition-colors shrink-0"
+        onMouseDown={handleMouseDown}
+      />
 
       {/* Main content */}
       <main className="flex-1 overflow-y-auto relative">
