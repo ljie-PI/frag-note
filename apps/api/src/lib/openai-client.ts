@@ -26,7 +26,7 @@ export async function createSummaryAndTags(
 ): Promise<StructuredSummary | null> {
   const env = parseEnv(inputEnv);
 
-  if (!env.ai.openAiApiKey || sourceText.trim().length === 0) {
+  if (!env.ai.summary.apiKey || sourceText.trim().length === 0) {
     return null;
   }
 
@@ -46,9 +46,9 @@ export async function createSummaryAndTags(
         text: sourceText,
       },
     ],
-    env.ai.summaryModel,
-    env.ai.openAiApiKey,
-    env.ai.openAiBaseUrl,
+    env.ai.summary.model,
+    env.ai.summary.apiKey,
+    env.ai.summary.baseUrl,
   );
 
   if (!responseText) {
@@ -84,18 +84,18 @@ export async function createEmbeddingVector(
 ): Promise<number[] | null> {
   const env = parseEnv(inputEnv);
 
-  if (!env.ai.openAiApiKey || sourceText.trim().length === 0) {
+  if (!env.ai.embedding.apiKey || sourceText.trim().length === 0) {
     return null;
   }
 
-  const response = await fetch(`${trimTrailingSlash(env.ai.openAiBaseUrl)}/embeddings`, {
+  const response = await fetch(`${trimTrailingSlash(env.ai.embedding.baseUrl)}/embeddings`, {
     method: 'POST',
     headers: {
-      authorization: `Bearer ${env.ai.openAiApiKey}`,
+      authorization: `Bearer ${env.ai.embedding.apiKey}`,
       'content-type': 'application/json',
     },
     body: JSON.stringify({
-      model: env.ai.embeddingModel,
+      model: env.ai.embedding.model,
       input: sourceText,
     }),
   });
@@ -120,7 +120,7 @@ export async function transcribeAudioBytes(
 ): Promise<string | null> {
   const env = parseEnv(inputEnv);
 
-  if (!env.ai.openAiApiKey || bytes.length === 0) {
+  if (!env.ai.transcription.apiKey || bytes.length === 0) {
     return null;
   }
 
@@ -129,14 +129,14 @@ export async function transcribeAudioBytes(
     'file',
     new File([bytes], fileName, { type: mimeType || 'audio/webm' }),
   );
-  formData.append('model', env.ai.transcriptionModel);
+  formData.append('model', env.ai.transcription.model);
 
   const response = await fetch(
-    `${trimTrailingSlash(env.ai.openAiBaseUrl)}/audio/transcriptions`,
+    `${trimTrailingSlash(env.ai.transcription.baseUrl)}/audio/transcriptions`,
     {
       method: 'POST',
       headers: {
-        authorization: `Bearer ${env.ai.openAiApiKey}`,
+        authorization: `Bearer ${env.ai.transcription.apiKey}`,
       },
       body: formData,
     },
@@ -158,7 +158,7 @@ export async function extractTextFromVisualAsset(
 ): Promise<string | null> {
   const env = parseEnv(inputEnv);
 
-  if (!env.ai.openAiApiKey || bytes.length === 0) {
+  if (!env.ai.ocr.apiKey || bytes.length === 0) {
     return null;
   }
 
@@ -185,9 +185,9 @@ export async function extractTextFromVisualAsset(
 
   const responseText = await invokeOpenAiTextResponse(
     inputParts,
-    env.ai.ocrModel,
-    env.ai.openAiApiKey,
-    env.ai.openAiBaseUrl,
+    env.ai.ocr.model,
+    env.ai.ocr.apiKey,
+    env.ai.ocr.baseUrl,
   );
 
   return responseText?.trim() || null;

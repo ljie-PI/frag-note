@@ -59,12 +59,12 @@ Variables currently used on `main`:
   - `SUPABASE_STORAGE_RAW_BUCKET`
   - `SUPABASE_STORAGE_DERIVED_BUCKET`
   - `SUPABASE_DB_URL`
-  - `OPENAI_API_KEY`
-  - `OPENAI_BASE_URL`
-  - `OPENAI_SUMMARY_MODEL`
-  - `OPENAI_EMBEDDING_MODEL`
-  - `OPENAI_TRANSCRIPTION_MODEL`
-  - `OPENAI_OCR_MODEL`
+  - `LLM_API_KEY` – global default API key
+  - `LLM_BASE_URL` – global default base URL
+  - `SUMMARY_MODEL`, `SUMMARY_API_KEY`, `SUMMARY_BASE_URL`
+  - `EMBEDDING_MODEL`, `EMBEDDING_API_KEY`, `EMBEDDING_BASE_URL`
+  - `TRANSCRIPTION_MODEL`, `TRANSCRIPTION_API_KEY`, `TRANSCRIPTION_BASE_URL`
+  - `OCR_MODEL`, `OCR_API_KEY`, `OCR_BASE_URL`
 - Desktop frontend:
   - `VITE_SUPABASE_URL`
   - `VITE_SUPABASE_ANON_KEY`
@@ -81,12 +81,20 @@ export SUPABASE_SERVICE_ROLE_KEY="<service-role-key>"
 export SUPABASE_STORAGE_RAW_BUCKET="captures-raw"
 export SUPABASE_STORAGE_DERIVED_BUCKET="captures-derived"
 export SUPABASE_DB_URL="postgresql://postgres:postgres@127.0.0.1:5432/sui_note"
-export OPENAI_API_KEY="<optional-openai-key>"
-export OPENAI_BASE_URL="https://api.openai.com/v1"
-export OPENAI_SUMMARY_MODEL="gpt-4.1-mini"
-export OPENAI_EMBEDDING_MODEL="text-embedding-3-small"
-export OPENAI_TRANSCRIPTION_MODEL="gpt-4o-mini-transcribe"
-export OPENAI_OCR_MODEL="gpt-4.1-mini"
+export LLM_API_KEY="<optional-api-key>"
+export LLM_BASE_URL="https://api.openai.com/v1"
+export SUMMARY_MODEL="gpt-4.1-mini"
+# export SUMMARY_API_KEY="<override-key>"
+# export SUMMARY_BASE_URL="<override-url>"
+export EMBEDDING_MODEL="text-embedding-3-small"
+# export EMBEDDING_API_KEY="<override-key>"
+# export EMBEDDING_BASE_URL="<override-url>"
+export TRANSCRIPTION_MODEL="gpt-4o-mini-transcribe"
+# export TRANSCRIPTION_API_KEY="<override-key>"
+# export TRANSCRIPTION_BASE_URL="<override-url>"
+export OCR_MODEL="gpt-4.1-mini"
+# export OCR_API_KEY="<override-key>"
+# export OCR_BASE_URL="<override-url>"
 export VITE_SUPABASE_URL="$SUPABASE_URL"
 export VITE_SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY"
 export VITE_API_BASE_URL="http://127.0.0.1:3000"
@@ -130,7 +138,7 @@ Current checked-in Edge Functions read:
 - `SUPABASE_ANON_KEY`
 - `SUPABASE_SERVICE_ROLE_KEY`
 
-`OPENAI_*`, `SUPABASE_STORAGE_RAW_BUCKET`, `SUPABASE_STORAGE_DERIVED_BUCKET`, `HOST`,
+`LLM_*`, `SUMMARY_*`, `EMBEDDING_*`, `TRANSCRIPTION_*`, `OCR_*`, `SUPABASE_STORAGE_RAW_BUCKET`, `SUPABASE_STORAGE_DERIVED_BUCKET`, `HOST`,
 `PORT`, and `SUPABASE_DB_URL` are relevant for the local API/worker runtime.
 
 ## Install

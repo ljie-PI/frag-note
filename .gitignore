@@ -1,5 +1,10 @@
 .worktrees/
+.env
 node_modules/
 dist/
 docs/superpowers/
 apps/desktop/src-tauri/target/
+
+# Supabase local
+supabase/.branches/
+supabase/.temp/
