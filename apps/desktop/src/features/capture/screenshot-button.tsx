@@ -32,7 +32,7 @@ export function ScreenshotButton({
   );
 }
 
-async function captureScreenshot(): Promise<LocalAssetPointer> {
+export async function captureScreenshot(): Promise<LocalAssetPointer> {
   if (typeof navigator !== 'undefined' && navigator.mediaDevices?.getDisplayMedia) {
     const stream = await navigator.mediaDevices.getDisplayMedia({
       video: true,

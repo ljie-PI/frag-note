@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { listen } from '@tauri-apps/api/event';
 import { getCurrentWindow } from '@tauri-apps/api/window';
-import { readText } from '@tauri-apps/plugin-clipboard-manager';
 import { Paperclip, Send, X } from 'lucide-react';
 import { createCaptureStore } from '../features/capture/capture-store.ts';
 import { createDesktopAdapter } from '../lib/desktop-adapter.ts';
 import { FileDropzone } from '../features/capture/file-dropzone.tsx';
 import { ScreenshotButton } from '../features/capture/screenshot-button.tsx';
+import { captureScreenshot } from '../features/capture/screenshot-button.tsx';
 import { VoiceRecorder } from '../features/capture/voice-recorder.tsx';
+import { useVoiceRecorder } from '../features/capture/use-voice-recorder.ts';
 import {
   persistLocalAssetPointer,
   type LocalAssetPointer,
@@ -20,7 +21,6 @@ export function QuickCapture() {
   const [rawText, setRawText] = useState('');
   const [assets, setAssets] = useState<LocalAssetPointer[]>([]);
   const [busy, setBusy] = useState(false);
-  const [recording, setRecording] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const addAsset = (asset: LocalAssetPointer) =>
@@ -28,15 +28,20 @@ export function QuickCapture() {
 
   const hasContent = rawText.trim().length > 0 || assets.length > 0;
 
+  const { recording, stopRecording, startRecording } = useVoiceRecorder((asset) => {
+    addAsset(asset);
+  });
+
   const hideWindow = async () => {
     setRawText('');
     setAssets([]);
-    setRecording(false);
+    if (recording) stopRecording();
     await getCurrentWindow().hide();
   };
 
   const handleSave = async () => {
     if (!hasContent) return;
+    if (recording) stopRecording();
     setBusy(true);
     try {
       await store.saveFragment({
@@ -61,24 +66,28 @@ export function QuickCapture() {
 
   // Listen for events from global shortcuts
   useEffect(() => {
-    const unlisten = listen<string>('quick-capture', async (event) => {
-      const mode = event.payload;
+    const unlisten = listen<{ mode: string; text: string }>('quick-capture', async (event) => {
+      const { mode, text } = event.payload;
 
       if (mode === 'clipboard') {
-        try {
-          const text = await readText();
-          if (text) {
-            setRawText((prev) => prev ? `${prev}\n${text}` : text);
-          }
-        } catch {
-          // Clipboard empty or access denied
+        if (text) {
+          setRawText((prev) => prev ? `${prev}\n${text}` : text);
         }
         setTimeout(() => textareaRef.current?.focus(), 100);
       } else if (mode === 'screenshot') {
-        // Trigger screenshot via the ScreenshotButton ref — handled by auto-trigger state
-        setAutoScreenshot(true);
+        try {
+          const asset = await captureScreenshot();
+          addAsset(asset);
+        } catch {
+          // Screenshot cancelled or failed
+        }
+        setTimeout(() => textareaRef.current?.focus(), 100);
       } else if (mode === 'voice') {
-        setRecording(true);
+        try {
+          await startRecording();
+        } catch {
+          // Microphone access denied
+        }
       }
     });
 
@@ -87,13 +96,12 @@ export function QuickCapture() {
     };
   }, []);
 
-  // Escape to close
+  // Escape to close, Ctrl+Enter to save
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         void hideWindow();
       }
-      // Ctrl+Enter or Cmd+Enter to save
       if ((e.ctrlKey || e.metaKey) && e.key === 'Enter' && hasContent) {
         e.preventDefault();
         void handleSave();
@@ -102,9 +110,6 @@ export function QuickCapture() {
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   }, [hasContent, rawText, assets]);
-
-  // Auto-screenshot trigger
-  const [autoScreenshot, setAutoScreenshot] = useState(false);
 
   return (
     <div className="h-screen flex flex-col bg-white/90 backdrop-blur-xl rounded-xl overflow-hidden">
@@ -121,12 +126,12 @@ export function QuickCapture() {
       </div>
 
       {/* Content */}
-      <div className="flex-1 flex flex-col px-4 pb-4 overflow-hidden">
+      <div className="flex-1 flex flex-col px-4 pb-3 overflow-hidden">
         <FileDropzone assets={assets} onAddAsset={addAsset}>
           <textarea
             ref={textareaRef}
             aria-label="快速记录"
-            className="w-full bg-transparent text-sm text-slate-800 placeholder:text-slate-400 outline-none resize-none min-h-[100px] flex-1"
+            className="w-full bg-transparent text-sm text-slate-800 placeholder:text-slate-400 outline-none resize-none min-h-[80px]"
             placeholder="随便写点什么..."
             value={rawText}
             onChange={(e) => setRawText(e.target.value)}
@@ -147,22 +152,25 @@ export function QuickCapture() {
             </div>
           ) : null}
 
+          {/* Recording indicator */}
+          {recording ? (
+            <div className="mt-2 flex items-center gap-2 text-xs text-red-600">
+              <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+              录音中… 点击工具栏停止按钮或按 Ctrl+Enter 保存
+            </div>
+          ) : null}
+
           {/* Toolbar */}
           <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between">
             <div className="flex items-center gap-1">
               <FileDropzone.PickerButton
                 onClick={() => document.getElementById('capture-file-input')?.click()}
               />
-              <ScreenshotButton
-                onCaptured={(asset) => {
-                  addAsset(asset);
-                  setAutoScreenshot(false);
-                }}
-              />
+              <ScreenshotButton onCaptured={addAsset} />
               <VoiceRecorder onRecorded={addAsset} />
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-xs text-slate-400">Ctrl+Enter 保存 · Esc 关闭</span>
+              <span className="text-xs text-slate-400">Ctrl+Enter · Esc</span>
               <button
                 className="inline-flex items-center gap-1.5 rounded-full bg-purple-600 px-4 py-1.5 text-xs font-medium text-white shadow-sm hover:bg-purple-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
                 disabled={busy || !hasContent}

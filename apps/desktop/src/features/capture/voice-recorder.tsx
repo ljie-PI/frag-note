@@ -1,87 +1,22 @@
-import { useRef, useState } from 'react';
 import { Mic, MicOff } from 'lucide-react';
-import { invoke } from '@tauri-apps/api/core';
 import type { LocalAssetPointer } from '../storage/local-assets.ts';
+import { useVoiceRecorder } from './use-voice-recorder.ts';
 
 export function VoiceRecorder({
   onRecorded,
 }: {
   onRecorded: (asset: LocalAssetPointer) => void;
 }) {
-  const [recording, setRecording] = useState(false);
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const chunksRef = useRef<Blob[]>([]);
+  const { recording, toggleRecording } = useVoiceRecorder(onRecorded);
 
   return (
     <button
       className={`inline-flex items-center justify-center w-9 h-9 rounded-full transition-colors ${recording ? 'text-red-600 bg-red-50 hover:bg-red-100 animate-pulse' : 'text-slate-400 hover:text-purple-600 hover:bg-purple-50'}`}
-      onClick={async () => {
-        if (
-          typeof navigator !== 'undefined' &&
-          navigator.mediaDevices?.getUserMedia &&
-          typeof MediaRecorder !== 'undefined'
-        ) {
-          if (!recording) {
-            const stream = await navigator.mediaDevices.getUserMedia({
-              audio: true,
-            });
-            const mediaRecorder = new MediaRecorder(stream);
-            chunksRef.current = [];
-            mediaRecorderRef.current = mediaRecorder;
-            mediaRecorder.ondataavailable = (event) => {
-              if (event.data.size > 0) {
-                chunksRef.current.push(event.data);
-              }
-            };
-            mediaRecorder.onstop = async () => {
-              const blob = new Blob(chunksRef.current, {
-                type: mediaRecorder.mimeType || 'audio/webm',
-              });
-              onRecorded({
-                fileName: `voice-${Date.now()}.webm`,
-                mimeType: blob.type || 'audio/webm',
-                byteSize: blob.size,
-                base64Data: await blobToBase64(blob),
-              });
-              stream.getTracks().forEach((track) => track.stop());
-              chunksRef.current = [];
-              mediaRecorderRef.current = null;
-            };
-            mediaRecorder.start();
-            setRecording(true);
-            return;
-          }
-
-          mediaRecorderRef.current?.stop();
-          setRecording(false);
-          return;
-        }
-
-        const localPath =
-          typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window
-            ? await invoke<string>('create_voice_placeholder')
-            : '/tmp/placeholder-voice.webm';
-        onRecorded({
-          fileName: 'placeholder-voice.webm',
-          localPath,
-          mimeType: 'audio/webm',
-        });
-      }}
+      onClick={() => void toggleRecording()}
       title={recording ? '停止录音' : '录音'}
       type="button"
     >
       {recording ? <MicOff size={18} /> : <Mic size={18} />}
     </button>
   );
-}
-
-async function blobToBase64(blob: Blob) {
-  const bytes = new Uint8Array(await blob.arrayBuffer());
-  let binary = '';
-
-  for (const byte of bytes) {
-    binary += String.fromCharCode(byte);
-  }
-
-  return btoa(binary);
 }
