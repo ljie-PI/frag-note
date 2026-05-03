@@ -15,6 +15,7 @@ export default defineConfig({
       input: {
         main: resolve(__dirname, 'index.html'),
         'quick-capture': resolve(__dirname, 'quick-capture.html'),
+        'screenshot-overlay': resolve(__dirname, 'screenshot-overlay.html'),
       },
     },
   },

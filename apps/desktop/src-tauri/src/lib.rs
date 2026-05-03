@@ -306,17 +306,19 @@ pub fn run() {
                                 }
                             });
                         }
-                        ShortcutAction::EmitScreenshot | ShortcutAction::EmitVoice => {
-                            let payload = match action {
-                                ShortcutAction::EmitScreenshot => QuickCapturePayload {
-                                    mode: "screenshot".into(),
-                                    text: String::new(),
-                                },
-                                ShortcutAction::EmitVoice => QuickCapturePayload {
-                                    mode: "voice".into(),
-                                    text: String::new(),
-                                },
-                                _ => return,
+                        ShortcutAction::EmitScreenshot => {
+                            if let Err(error) = commands::screenshot::show_screenshot_overlay_window(
+                                app,
+                                None,
+                                Some("quick-capture".into()),
+                            ) {
+                                eprintln!("failed to show screenshot overlay: {error}");
+                            }
+                        }
+                        ShortcutAction::EmitVoice => {
+                            let payload = QuickCapturePayload {
+                                mode: "voice".into(),
+                                text: String::new(),
                             };
 
                             show_quick_capture(app);
@@ -329,6 +331,7 @@ pub fn run() {
                 .build(),
         )
         .manage(ShortcutState::default())
+        .manage(commands::screenshot::PendingScreenshotOverlayRequest::default())
         .setup(move |app| {
             // Register global shortcuts
             let gs = app.global_shortcut();
@@ -361,6 +364,12 @@ pub fn run() {
             commands::storage::create_screenshot_placeholder,
             commands::storage::create_voice_placeholder,
             commands::storage::read_local_asset_base64,
+            commands::screenshot::capture_screens,
+            commands::screenshot::capture_monitor_at_point,
+            commands::screenshot::capture_monitor_at_cursor,
+            commands::screenshot::show_screenshot_overlay,
+            commands::screenshot::hide_screenshot_overlay,
+            commands::screenshot::take_pending_screenshot_overlay_request,
             commands::shortcuts::register_capture_shortcut,
             commands::shortcuts::current_capture_shortcut,
             commands::shortcuts::open_macos_accessibility_settings,

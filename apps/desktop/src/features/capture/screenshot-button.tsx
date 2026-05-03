@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Camera } from 'lucide-react';
-import { invoke } from '@tauri-apps/api/core';
 import type { LocalAssetPointer } from '../storage/local-assets.ts';
+import { requestRegionScreenshot } from './region-screenshot.ts';
 
 export function ScreenshotButton({
   onCaptured,
@@ -19,7 +19,9 @@ export function ScreenshotButton({
 
         try {
           const captured = await captureScreenshot();
-          onCaptured(captured);
+          if (captured) {
+            onCaptured(captured);
+          }
         } finally {
           setBusy(false);
         }
@@ -32,7 +34,11 @@ export function ScreenshotButton({
   );
 }
 
-export async function captureScreenshot(): Promise<LocalAssetPointer> {
+export async function captureScreenshot(): Promise<LocalAssetPointer | null> {
+  if (hasTauriRuntime()) {
+    return requestRegionScreenshot();
+  }
+
   if (typeof navigator !== 'undefined' && navigator.mediaDevices?.getDisplayMedia) {
     const stream = await navigator.mediaDevices.getDisplayMedia({
       video: true,
@@ -73,16 +79,11 @@ export async function captureScreenshot(): Promise<LocalAssetPointer> {
     }
   }
 
-  const localPath =
-    typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window
-      ? await invoke<string>('create_screenshot_placeholder')
-      : '/tmp/placeholder-screenshot.png';
+  return null;
+}
 
-  return {
-    fileName: 'placeholder-screenshot.png',
-    localPath,
-    mimeType: 'image/png',
-  };
+function hasTauriRuntime(): boolean {
+  return typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
 }
 
 async function blobToBase64(blob: Blob) {

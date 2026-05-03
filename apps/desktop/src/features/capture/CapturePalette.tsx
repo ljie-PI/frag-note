@@ -52,7 +52,7 @@ export const CapturePalette = forwardRef<CapturePaletteRef, CapturePaletteProps>
       triggerScreenshot: async () => {
         try {
           const asset = await captureScreenshot();
-          addAsset(asset);
+          if (asset) addAsset(asset);
         } catch {
           // Screenshot cancelled or failed
         }
