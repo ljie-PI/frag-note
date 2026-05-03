@@ -1,11 +1,24 @@
 # Cross-Platform Desktop Smoke Verification
 
+> **Status: forward-looking.** This document is intentionally landed ahead of the
+> feature work it describes (PRs **#23** foundation, **#24** cross-platform
+> Alt+Shift+C via enigo, **#25** drag-to-select screenshot via xcap). Until those
+> three PRs merge to `main`, the matrix below describes the **target** behavior.
+> The maintainer updates the cells with ✅ / ❌ only after the corresponding code
+> has merged AND been manually exercised on the listed platform. **Do not file
+> issues against this doc for "feature X is not implemented yet" — that is the
+> point of the dependency PRs.**
+>
+> When all three dependency PRs have merged, remove this banner and update the
+> "Scope" reference below to past tense.
+
 This document tracks manual verification of the desktop app's capture UI on Linux,
 macOS, and Windows. It is updated by the maintainer after each cross-platform release
 candidate. Cells marked **TBD** have not yet been verified on that platform.
 
-> Scope landed via PRs #23 (foundation), #25 (drag-to-select screenshot via xcap),
-> and #24 (cross-platform Alt+Shift+C via enigo).
+> Scope provided by PRs #23 (foundation), #25 (drag-to-select screenshot via xcap),
+> and #24 (cross-platform Alt+Shift+C via enigo). Run the matrix only after those
+> PRs have merged into `main`.
 
 ## How to run the matrix
 
