@@ -83,9 +83,21 @@ export function App({ apiClient: providedApiClient }: AppProps = {}) {
 
   // Resizable sidebar
   const SIDEBAR_KEY = 'frag-note:sidebar-width';
+  const LEGACY_SIDEBAR_KEYS = ['sui-note:sidebar-width'];
   const [sidebarWidth, setSidebarWidth] = useState(() => {
     try {
-      const saved = localStorage.getItem(SIDEBAR_KEY);
+      let saved = localStorage.getItem(SIDEBAR_KEY);
+      if (saved === null) {
+        for (const legacyKey of LEGACY_SIDEBAR_KEYS) {
+          const legacyValue = localStorage.getItem(legacyKey);
+          if (legacyValue !== null) {
+            localStorage.setItem(SIDEBAR_KEY, legacyValue);
+            localStorage.removeItem(legacyKey);
+            saved = legacyValue;
+            break;
+          }
+        }
+      }
       return saved ? Math.max(200, Math.min(400, Number(saved))) : 260;
     } catch {
       return 260;
