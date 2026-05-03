@@ -20,5 +20,6 @@ tauri = { version = "2.8.2", features = [] }
 tauri-plugin-global-shortcut = "2"
 tauri-plugin-clipboard-manager = "2"
 arboard = "3"
-xcap = "0.7"
+enigo = "0.6.1"
 mouse_position = "0.1.4"
+xcap = "0.7"
