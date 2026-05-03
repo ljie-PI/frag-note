@@ -43,7 +43,6 @@
         "skipTaskbar": true,
         "visible": false,
         "resizable": false,
-        "fullscreen": true,
         "shadow": false,
         "focus": true
       }

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { emit } from '@tauri-apps/api/event';
-import { cursorPosition, getCurrentWindow } from '@tauri-apps/api/window';
+import { getCurrentWindow } from '@tauri-apps/api/window';
 import { computeCropRegion, type Point } from './crop-region.ts';
 
 export type MonitorCapture = {
@@ -18,6 +18,8 @@ export type MonitorCapture = {
 type OverlayRequest = {
   requestId?: string | null;
   targetLabel?: string | null;
+  cursorX?: number | null;
+  cursorY?: number | null;
 };
 
 type DragState = {
@@ -79,13 +81,7 @@ export function ScreenshotOverlay() {
       setLoading(true);
 
       try {
-        const captures = await invoke<MonitorCapture[]>('capture_screens');
-        const selected = await selectMonitorForCursor(captures);
-
-        if (!selected) {
-          throw new Error('No monitor was captured');
-        }
-
+        const selected = await captureRequestedMonitor(request);
         setMonitor(selected);
       } catch (error) {
         console.error('Failed to capture screens', error);
@@ -269,24 +265,15 @@ function SelectionMask({ selection }: { selection: SelectionRect | null }) {
   );
 }
 
-async function selectMonitorForCursor(captures: MonitorCapture[]) {
-  const pointer = await cursorPosition().catch(() => null);
-
-  if (pointer) {
-    const containingMonitor = captures.find(
-      (capture) =>
-        pointer.x >= capture.x &&
-        pointer.x < capture.x + capture.width &&
-        pointer.y >= capture.y &&
-        pointer.y < capture.y + capture.height,
-    );
-
-    if (containingMonitor) {
-      return containingMonitor;
-    }
+async function captureRequestedMonitor(request: OverlayRequest) {
+  if (typeof request.cursorX === 'number' && typeof request.cursorY === 'number') {
+    return invoke<MonitorCapture>('capture_monitor_at_point', {
+      x: Math.round(request.cursorX),
+      y: Math.round(request.cursorY),
+    });
   }
 
-  return captures.find((capture) => capture.is_primary) ?? captures[0] ?? null;
+  return invoke<MonitorCapture>('capture_monitor_at_cursor');
 }
 
 function rectFromDrag({ start, end }: DragState): SelectionRect {
