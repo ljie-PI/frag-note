@@ -65,8 +65,63 @@ pub fn create_voice_placeholder(app: AppHandle) -> Result<String, String> {
 
 #[tauri::command]
 pub fn read_local_asset_base64(local_path: String) -> Result<String, String> {
-    let bytes = fs::read(local_path).map_err(|error| error.to_string())?;
+    let bytes =
+        fs::read(normalize_local_asset_path(&local_path)).map_err(|error| error.to_string())?;
     Ok(STANDARD.encode(bytes))
+}
+
+fn normalize_local_asset_path(input: &str) -> PathBuf {
+    let (path, is_file_url) = match input.strip_prefix("file://") {
+        Some(file_url_path) => (percent_decode_path(file_url_path), true),
+        None => (input.to_owned(), false),
+    };
+
+    let path = if is_file_url {
+        path.strip_prefix('/')
+            .filter(|stripped| starts_with_windows_drive(stripped))
+            .unwrap_or(&path)
+    } else {
+        &path
+    };
+
+    PathBuf::from(path)
+}
+
+fn starts_with_windows_drive(path: &str) -> bool {
+    let bytes = path.as_bytes();
+    bytes.len() >= 2 && bytes[0].is_ascii_alphabetic() && bytes[1] == b':'
+}
+
+fn percent_decode_path(path: &str) -> String {
+    let bytes = path.as_bytes();
+    let mut decoded = Vec::with_capacity(bytes.len());
+    let mut index = 0;
+
+    while index < bytes.len() {
+        if bytes[index] == b'%' && index + 2 < bytes.len() {
+            if let (Some(high), Some(low)) =
+                (hex_value(bytes[index + 1]), hex_value(bytes[index + 2]))
+            {
+                decoded.push((high << 4) | low);
+                index += 3;
+                continue;
+            }
+        }
+
+        decoded.push(bytes[index]);
+        index += 1;
+    }
+
+    String::from_utf8(decoded).unwrap_or_else(|_| path.to_owned())
+}
+
+fn hex_value(byte: u8) -> Option<u8> {
+    match byte {
+        b'0'..=b'9' => Some(byte - b'0'),
+        b'a'..=b'f' => Some(byte - b'a' + 10),
+        b'A'..=b'F' => Some(byte - b'A' + 10),
+        _ => None,
+    }
 }
 
 fn create_placeholder_asset(
@@ -114,4 +169,50 @@ fn extract_fragment_id(payload: &str) -> Result<String, String> {
         .and_then(|fragment_id| fragment_id.as_str())
         .map(str::to_owned)
         .ok_or_else(|| String::from("payload is missing fragment.fragmentId"))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::path::PathBuf;
+
+    #[test]
+    fn normalize_local_asset_path_strips_file_url_prefix() {
+        assert_eq!(
+            normalize_local_asset_path("file:///home/fragnote/capture.png"),
+            PathBuf::from("/home/fragnote/capture.png")
+        );
+    }
+
+    #[test]
+    fn normalize_local_asset_path_preserves_plain_paths() {
+        assert_eq!(
+            normalize_local_asset_path("/home/fragnote/capture.png"),
+            PathBuf::from("/home/fragnote/capture.png")
+        );
+    }
+
+    #[test]
+    fn normalize_local_asset_path_decodes_file_url_spaces() {
+        assert_eq!(
+            normalize_local_asset_path("file:///home/Frag%20Note/capture.png"),
+            PathBuf::from("/home/Frag Note/capture.png")
+        );
+    }
+
+    #[test]
+    fn normalize_local_asset_path_accepts_windows_file_urls() {
+        assert_eq!(
+            normalize_local_asset_path("file:///C:/Users/Frag%20Note/capture.png"),
+            PathBuf::from("C:/Users/Frag Note/capture.png")
+        );
+    }
+
+    #[test]
+    fn normalize_local_asset_path_keeps_plain_windows_like_paths() {
+        assert_eq!(
+            normalize_local_asset_path("/C:/Users/Frag%20Note/capture.png"),
+            PathBuf::from("/C:/Users/Frag%20Note/capture.png")
+        );
+    }
 }
