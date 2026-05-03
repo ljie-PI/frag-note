@@ -6,7 +6,7 @@ import type {
   Fragment,
   ProcessingJob,
   Relation,
-} from '@sui-note/domain';
+} from '@frag-note/domain';
 import type { AppState } from './app-state.js';
 import { buildUpdateSuggestions } from './object-candidates/update-suggestions.js';
 import { runOrganizationWorker } from '../workers/organization-worker.js';

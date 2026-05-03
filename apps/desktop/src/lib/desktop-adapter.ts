@@ -1,7 +1,7 @@
 import { invoke } from '@tauri-apps/api/core';
 import type { DesktopAdapter, LocalFragmentRecord } from '../features/capture/capture-store.ts';
 
-const STORAGE_KEY = 'sui-note.desktop.fragments';
+const STORAGE_KEY = 'frag-note.desktop.fragments';
 
 export function createDesktopAdapter(): DesktopAdapter {
   if (hasTauriRuntime()) {

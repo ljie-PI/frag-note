@@ -1,4 +1,4 @@
-import type { DerivedArtifact, Fragment } from '@sui-note/domain';
+import type { DerivedArtifact, Fragment } from '@frag-note/domain';
 import type { AppState } from '../app-state.js';
 
 export function retrieveArtifacts(

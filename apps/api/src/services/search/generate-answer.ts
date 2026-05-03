@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import type { AnswerArtifact } from '@sui-note/domain';
+import type { AnswerArtifact } from '@frag-note/domain';
 import type { AppState } from '../app-state.js';
 
 export function generateAnswer(

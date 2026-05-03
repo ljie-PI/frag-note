@@ -1,4 +1,4 @@
-import type { AnswerArtifact } from '@sui-note/domain';
+import type { AnswerArtifact } from '@frag-note/domain';
 
 export function useSaveAnswerFragment({
   saveAnswerAsFragment,

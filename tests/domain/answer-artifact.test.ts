@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test';
 import { answerArtifactSchema } from '../../packages/domain/src/index.ts';
-import { seedAnswer, seedFragments } from '@sui-note/testing';
+import { seedAnswer, seedFragments } from '@frag-note/testing';
 
 describe('answerArtifactSchema', () => {
   it('captures canonical answer artifact fields', () => {

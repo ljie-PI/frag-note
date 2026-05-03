@@ -11,7 +11,7 @@ import {
   seedCandidate,
   seedDerivedArtifact,
   seedFragments,
-} from '@sui-note/testing';
+} from '@frag-note/testing';
 
 const testDir = dirname(fileURLToPath(import.meta.url));
 const searchEntryUrl = pathToFileURL(

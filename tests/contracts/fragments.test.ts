@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'bun:test';
-import { fragmentSchema } from '@sui-note/domain';
+import { fragmentSchema } from '@frag-note/domain';
 import { fragmentContractSchema } from '../../packages/contracts/src/fragments.ts';
-import { seedFragments } from '@sui-note/testing';
+import { seedFragments } from '@frag-note/testing';
 
 describe('fragmentContractSchema', () => {
   it('accepts the exact fragment contract payload', () => {

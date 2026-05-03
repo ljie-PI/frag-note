@@ -1,4 +1,4 @@
-import type { DerivedObject } from '@sui-note/domain';
+import type { DerivedObject } from '@frag-note/domain';
 import type { AppState } from '../services/app-state.js';
 import { buildEntityCandidates } from '../services/object-candidates/entity-candidate-service.js';
 import { buildProjectCandidates } from '../services/object-candidates/project-candidate-service.js';

@@ -1,5 +1,5 @@
 {
-  "name": "@sui-note/testing",
+  "name": "@frag-note/testing",
   "private": true,
   "type": "module",
   "exports": {

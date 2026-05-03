@@ -1,4 +1,4 @@
-import type { Fragment, Relation } from '@sui-note/domain';
+import type { Fragment, Relation } from '@frag-note/domain';
 import type { AppState } from '../app-state.js';
 
 export function expandRelations(

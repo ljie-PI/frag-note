@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
-import type { AnswerArtifact, DerivedObject, Fragment, Relation } from '@sui-note/domain';
-import type { CreateDeviceSessionResponse } from '@sui-note/contracts/auth';
+import type { AnswerArtifact, DerivedObject, Fragment, Relation } from '@frag-note/domain';
+import type { CreateDeviceSessionResponse } from '@frag-note/contracts/auth';
 import type { RequestAuthContext } from '../lib/request-auth.js';
 import {
   buildDerivedArtifactsForFragmentAsync,

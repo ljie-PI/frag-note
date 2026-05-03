@@ -1,4 +1,4 @@
-import type { DerivedObject, Fragment } from '@sui-note/domain';
+import type { DerivedObject, Fragment } from '@frag-note/domain';
 
 export type UpdateSuggestion = {
   objectId: string;

@@ -6,7 +6,7 @@ import type {
   Fragment,
   ProcessingJob,
   Relation,
-} from '@sui-note/domain';
+} from '@frag-note/domain';
 
 export type AppState = {
   fragments: Map<string, Fragment>;

@@ -1,5 +1,5 @@
 {
-  "name": "@sui-note/desktop",
+  "name": "@frag-note/desktop",
   "private": true,
   "type": "module",
   "scripts": {
@@ -10,7 +10,7 @@
     "lint": "bun -e \"process.exit(0)\""
   },
   "dependencies": {
-    "@sui-note/contracts": "workspace:*",
+    "@frag-note/contracts": "workspace:*",
     "@tauri-apps/api": "^2.8.0",
     "@tauri-apps/plugin-clipboard-manager": "^2.3.2",
     "@tauri-apps/plugin-global-shortcut": "^2.3.1",

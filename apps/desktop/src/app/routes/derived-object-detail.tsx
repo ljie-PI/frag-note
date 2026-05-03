@@ -1,4 +1,4 @@
-import type { DerivedObject } from '@sui-note/domain';
+import type { DerivedObject } from '@frag-note/domain';
 import { UpdateSuggestionPanel } from '../../features/organization/update-suggestion-panel.tsx';
 
 export function DerivedObjectDetailPage({

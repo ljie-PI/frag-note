@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { AnswerArtifact, DerivedObject } from '@sui-note/domain';
+import type { AnswerArtifact, DerivedObject } from '@frag-note/domain';
 import { PenLine, FileText, FolderKanban, Search, NotebookPen, LogOut } from 'lucide-react';
 import { CapturePalette } from '../features/capture/CapturePalette.tsx';
 import {
@@ -82,7 +82,7 @@ export function App({ apiClient: providedApiClient }: AppProps = {}) {
   );
 
   // Resizable sidebar
-  const SIDEBAR_KEY = 'sui-note:sidebar-width';
+  const SIDEBAR_KEY = 'frag-note:sidebar-width';
   const [sidebarWidth, setSidebarWidth] = useState(() => {
     try {
       const saved = localStorage.getItem(SIDEBAR_KEY);

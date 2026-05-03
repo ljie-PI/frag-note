@@ -1,4 +1,4 @@
-import type { Citation, DerivedObject, Fragment } from '@sui-note/domain';
+import type { Citation, DerivedObject, Fragment } from '@frag-note/domain';
 
 export function buildCitationBundle(input: {
   fragments: Fragment[];
