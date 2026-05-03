@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { emit } from '@tauri-apps/api/event';
 import { getCurrentWindow } from '@tauri-apps/api/window';
@@ -164,48 +164,54 @@ export function ScreenshotOverlay() {
     [hideOverlay],
   );
 
-  const handleMouseDown = (event: React.MouseEvent<HTMLDivElement>) => {
+  // We attach mousemove/mouseup to `window` (not the React JSX) on mousedown so
+  // a drag still completes if the pointer leaves the overlay window briefly.
+  const handleMouseDown = (event: MouseEvent<HTMLDivElement>) => {
     if (event.button !== 0 || !monitorRef.current || loading) return;
     event.preventDefault();
     const point = { x: event.clientX, y: event.clientY };
     setDragState({ start: point, end: point });
-  };
 
-  const handleMouseMove = (event: React.MouseEvent<HTMLDivElement>) => {
-    const activeDrag = dragRef.current;
-    if (!activeDrag) return;
-    event.preventDefault();
-    setDragState({
-      ...activeDrag,
-      end: { x: event.clientX, y: event.clientY },
-    });
-  };
-
-  const handleMouseUp = (event: React.MouseEvent<HTMLDivElement>) => {
-    const activeDrag = dragRef.current;
-    const currentMonitor = monitorRef.current;
-    if (!activeDrag || !currentMonitor) return;
-
-    event.preventDefault();
-    const finalDrag = {
-      ...activeDrag,
-      end: { x: event.clientX, y: event.clientY },
+    const onWindowMouseMove = (e: globalThis.MouseEvent) => {
+      const activeDrag = dragRef.current;
+      if (!activeDrag) return;
+      setDragState({
+        ...activeDrag,
+        end: { x: e.clientX, y: e.clientY },
+      });
     };
-    setDragState(finalDrag);
 
-    const region = computeCropRegion({
-      start: finalDrag.start,
-      end: finalDrag.end,
-      scaleFactor: currentMonitor.scale_factor,
-      monitor: currentMonitor,
-    });
+    const onWindowMouseUp = (e: globalThis.MouseEvent) => {
+      window.removeEventListener('mousemove', onWindowMouseMove);
+      window.removeEventListener('mouseup', onWindowMouseUp);
 
-    if (!region) {
-      void cancelCapture();
-      return;
-    }
+      const activeDrag = dragRef.current;
+      const currentMonitor = monitorRef.current;
+      if (!activeDrag || !currentMonitor) return;
 
-    void completeCapture(region);
+      const finalDrag = {
+        ...activeDrag,
+        end: { x: e.clientX, y: e.clientY },
+      };
+      setDragState(finalDrag);
+
+      const region = computeCropRegion({
+        start: finalDrag.start,
+        end: finalDrag.end,
+        scaleFactor: currentMonitor.scale_factor,
+        monitor: currentMonitor,
+      });
+
+      if (!region) {
+        void cancelCapture();
+        return;
+      }
+
+      void completeCapture(region);
+    };
+
+    window.addEventListener('mousemove', onWindowMouseMove);
+    window.addEventListener('mouseup', onWindowMouseUp);
   };
 
   const scaleFactor = monitor?.scale_factor && monitor.scale_factor > 0 ? monitor.scale_factor : 1;
@@ -220,8 +226,6 @@ export function ScreenshotOverlay() {
         void cancelCapture();
       }}
       onMouseDown={handleMouseDown}
-      onMouseMove={handleMouseMove}
-      onMouseUp={handleMouseUp}
       style={{
         backgroundImage: monitor
           ? `url(data:image/png;base64,${monitor.base64_png})`
