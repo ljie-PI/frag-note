@@ -1,5 +1,10 @@
 mod commands;
+mod selection_grab_flow;
 
+use selection_grab_flow::{
+    clipboard_grab_release_settle_duration, clipboard_text_for_result, shortcut_action_for_event,
+    with_clipboard_grab_lock, CopyShortcutResult, ShortcutAction, ShortcutKind, ShortcutPhase,
+};
 use serde::Serialize;
 use std::collections::HashSet;
 use std::sync::{Mutex, OnceLock};
@@ -21,13 +26,6 @@ struct QuickCapturePayload {
 }
 
 static EMITTED_ONE_SHOT_EVENTS: OnceLock<Mutex<HashSet<String>>> = OnceLock::new();
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-enum CopyShortcutResult {
-    Sent,
-    SkippedWayland,
-    PermissionDenied,
-}
 
 enum ClipboardTextSnapshot {
     Text(String),
@@ -146,17 +144,28 @@ fn grab_clipboard_text() -> String {
 /// Clear before simulating copy so the Sent path only accepts text written by the
 /// target app.
 fn grab_text_via_simulated_copy() -> (CopyShortcutResult, String) {
+    with_clipboard_grab_lock(grab_text_via_simulated_copy_unlocked)
+        .unwrap_or((CopyShortcutResult::PermissionDenied, String::new()))
+}
+
+fn grab_text_via_simulated_copy_unlocked() -> (CopyShortcutResult, String) {
     if is_wayland_session() {
-        return (CopyShortcutResult::SkippedWayland, grab_clipboard_text());
+        let text = grab_clipboard_text();
+        return (
+            CopyShortcutResult::SkippedWayland,
+            clipboard_text_for_result(CopyShortcutResult::SkippedWayland, &text),
+        );
     }
 
     let Ok(mut clipboard) = arboard::Clipboard::new() else {
         let result = simulate_copy_shortcut();
         let text = match result {
             CopyShortcutResult::Sent => String::new(),
-            CopyShortcutResult::SkippedWayland | CopyShortcutResult::PermissionDenied => {
-                grab_clipboard_text()
+            CopyShortcutResult::SkippedWayland => {
+                let text = grab_clipboard_text();
+                clipboard_text_for_result(result, &text)
             }
+            CopyShortcutResult::PermissionDenied => clipboard_text_for_result(result, ""),
         };
         return (result, text);
     };
@@ -174,13 +183,26 @@ fn grab_text_via_simulated_copy() -> (CopyShortcutResult, String) {
         }
         CopyShortcutResult::SkippedWayland => {
             restore_clipboard_text(&mut clipboard, original);
-            (CopyShortcutResult::SkippedWayland, grab_clipboard_text())
+            let text = grab_clipboard_text();
+            (
+                CopyShortcutResult::SkippedWayland,
+                clipboard_text_for_result(CopyShortcutResult::SkippedWayland, &text),
+            )
         }
         CopyShortcutResult::PermissionDenied => {
             restore_clipboard_text(&mut clipboard, original);
-            let text = clipboard.get_text().unwrap_or_default();
-            (CopyShortcutResult::PermissionDenied, text)
+            (
+                CopyShortcutResult::PermissionDenied,
+                clipboard_text_for_result(CopyShortcutResult::PermissionDenied, ""),
+            )
         }
+    }
+}
+
+fn show_quick_capture(app: &tauri::AppHandle) {
+    if let Some(win) = app.get_webview_window("quick-capture") {
+        let _ = win.show();
+        let _ = win.set_focus();
     }
 }
 
@@ -218,6 +240,30 @@ fn emit_accessibility_permission_needed(app: &tauri::AppHandle) {
     let _ = app;
 }
 
+fn shortcut_kind_for(
+    shortcut: &Shortcut,
+    clipboard: &Shortcut,
+    screenshot: &Shortcut,
+    voice: &Shortcut,
+) -> ShortcutKind {
+    if *shortcut == *clipboard {
+        ShortcutKind::Clipboard
+    } else if *shortcut == *screenshot {
+        ShortcutKind::Screenshot
+    } else if *shortcut == *voice {
+        ShortcutKind::Voice
+    } else {
+        ShortcutKind::Unknown
+    }
+}
+
+fn shortcut_phase_for(state: GsState) -> ShortcutPhase {
+    match state {
+        GsState::Pressed => ShortcutPhase::Pressed,
+        GsState::Released => ShortcutPhase::Released,
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let alt_shift_c = Shortcut::new(Some(Modifiers::ALT | Modifiers::SHIFT), Code::KeyC);
@@ -229,48 +275,54 @@ pub fn run() {
         .plugin(
             tauri_plugin_global_shortcut::Builder::new()
                 .with_handler(move |app, shortcut, event| {
-                    if event.state() != GsState::Pressed {
-                        return;
-                    }
+                    let kind =
+                        shortcut_kind_for(shortcut, &alt_shift_c, &alt_shift_s, &alt_shift_v);
+                    let action = shortcut_action_for_event(kind, shortcut_phase_for(event.state()));
 
-                    if *shortcut == alt_shift_c {
-                        // Show window immediately for responsiveness
-                        if let Some(win) = app.get_webview_window("quick-capture") {
-                            let _ = win.show();
-                            let _ = win.set_focus();
+                    match action {
+                        ShortcutAction::Ignore => {}
+                        ShortcutAction::GrabClipboard => {
+                            let app_handle = app.clone();
+                            std::thread::spawn(move || {
+                                std::thread::sleep(clipboard_grab_release_settle_duration());
+                                let (result, text) = grab_text_via_simulated_copy();
+                                show_quick_capture(&app_handle);
+
+                                match result {
+                                    CopyShortcutResult::Sent => {
+                                        emit_quick_capture(&app_handle, "clipboard", text);
+                                    }
+                                    CopyShortcutResult::SkippedWayland => {
+                                        emit_quick_capture(&app_handle, "clipboard", text);
+                                        emit_one_shot_event(
+                                            &app_handle,
+                                            "wayland-clipboard-fallback",
+                                        );
+                                    }
+                                    CopyShortcutResult::PermissionDenied => {
+                                        emit_accessibility_permission_needed(&app_handle);
+                                        emit_quick_capture(&app_handle, "clipboard", text);
+                                    }
+                                }
+                            });
                         }
+                        ShortcutAction::EmitScreenshot | ShortcutAction::EmitVoice => {
+                            let payload = match action {
+                                ShortcutAction::EmitScreenshot => QuickCapturePayload {
+                                    mode: "screenshot".into(),
+                                    text: String::new(),
+                                },
+                                ShortcutAction::EmitVoice => QuickCapturePayload {
+                                    mode: "voice".into(),
+                                    text: String::new(),
+                                },
+                                _ => return,
+                            };
 
-                        let app_handle = app.clone();
-                        std::thread::spawn(move || {
-                            let (result, text) = grab_text_via_simulated_copy();
-
-                            match result {
-                                CopyShortcutResult::Sent => {
-                                    emit_quick_capture(&app_handle, "clipboard", text);
-                                }
-                                CopyShortcutResult::SkippedWayland => {
-                                    emit_quick_capture(&app_handle, "clipboard", text);
-                                    emit_one_shot_event(&app_handle, "wayland-clipboard-fallback");
-                                }
-                                CopyShortcutResult::PermissionDenied => {
-                                    emit_accessibility_permission_needed(&app_handle);
-                                    emit_quick_capture(&app_handle, "clipboard", text);
-                                }
+                            show_quick_capture(app);
+                            if let Some(win) = app.get_webview_window("quick-capture") {
+                                let _ = win.emit("quick-capture", payload);
                             }
-                        });
-                    } else {
-                        let payload = if *shortcut == alt_shift_s {
-                            QuickCapturePayload { mode: "screenshot".into(), text: String::new() }
-                        } else if *shortcut == alt_shift_v {
-                            QuickCapturePayload { mode: "voice".into(), text: String::new() }
-                        } else {
-                            return;
-                        };
-
-                        if let Some(win) = app.get_webview_window("quick-capture") {
-                            let _ = win.show();
-                            let _ = win.set_focus();
-                            let _ = win.emit("quick-capture", payload);
                         }
                     }
                 })
@@ -295,7 +347,8 @@ pub fn run() {
                     let win_h = 240.0;
                     let x = (logical_w - win_w) / 2.0;
                     let y = logical_h - win_h - 48.0;
-                    let _ = win.set_position(tauri::Position::Logical(tauri::LogicalPosition::new(x, y)));
+                    let _ = win
+                        .set_position(tauri::Position::Logical(tauri::LogicalPosition::new(x, y)));
                 }
             }
 
