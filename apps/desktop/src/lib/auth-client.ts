@@ -1,7 +1,7 @@
 import {
   createDeviceSessionResponseSchema,
   type CreateDeviceSessionResponse,
-} from '@sui-note/contracts/auth';
+} from '@frag-note/contracts/auth';
 
 const ACCESS_TOKEN_KEY = 'sb-access-token';
 const REFRESH_TOKEN_KEY = 'sb-refresh-token';

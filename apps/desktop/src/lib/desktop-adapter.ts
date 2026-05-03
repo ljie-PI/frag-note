@@ -1,7 +1,8 @@
 import { invoke } from '@tauri-apps/api/core';
 import type { DesktopAdapter, LocalFragmentRecord } from '../features/capture/capture-store.ts';
 
-const STORAGE_KEY = 'sui-note.desktop.fragments';
+const STORAGE_KEY = 'frag-note.desktop.fragments';
+const LEGACY_STORAGE_KEYS = ['sui-note.desktop.fragments'] as const;
 
 export function createDesktopAdapter(): DesktopAdapter {
   if (hasTauriRuntime()) {
@@ -30,6 +31,8 @@ function createTauriDesktopAdapter(): DesktopAdapter {
 }
 
 function createBrowserDesktopAdapter(): DesktopAdapter {
+  migrateLegacyBrowserStorage();
+
   const readAll = () => {
     if (typeof localStorage === 'undefined') {
       return [] as LocalFragmentRecord[];
@@ -74,4 +77,26 @@ function createBrowserDesktopAdapter(): DesktopAdapter {
 
 function hasTauriRuntime(): boolean {
   return typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
+}
+
+// Backwards-compat: copy any data stored under pre-rename localStorage keys
+// (e.g. `sui-note.desktop.fragments`) into the current key so the rename is
+// transparent to existing browser-mode users. Idempotent: legacy key is
+// removed after the copy, so subsequent calls are no-ops.
+function migrateLegacyBrowserStorage(): void {
+  if (typeof localStorage === 'undefined') {
+    return;
+  }
+
+  for (const legacyKey of LEGACY_STORAGE_KEYS) {
+    const legacyValue = localStorage.getItem(legacyKey);
+    if (legacyValue === null) {
+      continue;
+    }
+
+    if (localStorage.getItem(STORAGE_KEY) === null) {
+      localStorage.setItem(STORAGE_KEY, legacyValue);
+    }
+    localStorage.removeItem(legacyKey);
+  }
 }

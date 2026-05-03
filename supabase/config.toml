@@ -1,4 +1,4 @@
-project_id = "sui-note"
+project_id = "frag-note"
 
 [api]
 enabled = true

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { AnswerArtifact } from '@sui-note/domain';
+import type { AnswerArtifact } from '@frag-note/domain';
 import { AnswerPanel } from '../../features/search/answer-panel.tsx';
 import { SearchForm } from '../../features/search/search-form.tsx';
 import { useSaveAnswerFragment } from '../../features/search/use-save-answer-fragment.ts';

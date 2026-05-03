@@ -1,4 +1,4 @@
-import { fragmentSchema } from '@sui-note/domain';
+import { fragmentSchema } from '@frag-note/domain';
 import { z } from 'zod';
 
 export const fragmentContractSchema = fragmentSchema.pick({

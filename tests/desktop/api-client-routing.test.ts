@@ -197,7 +197,7 @@ async function loadApiClientModule() {
   mock.module('@tauri-apps/api/core', () => ({
     invoke: async () => null,
   }));
-  mock.module('@sui-note/contracts/auth', () => ({
+  mock.module('@frag-note/contracts/auth', () => ({
     createDeviceSessionResponseSchema: {
       parse(value: unknown) {
         return value;

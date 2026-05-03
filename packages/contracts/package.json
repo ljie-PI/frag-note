@@ -1,5 +1,5 @@
 {
-  "name": "@sui-note/contracts",
+  "name": "@frag-note/contracts",
   "private": true,
   "type": "module",
   "exports": {
@@ -13,11 +13,11 @@
     "lint": "bun -e \"process.exit(0)\""
   },
   "dependencies": {
-    "@sui-note/domain": "workspace:*",
+    "@frag-note/domain": "workspace:*",
     "zod": "^4.1.11"
   },
   "devDependencies": {
-    "@sui-note/testing": "workspace:*",
+    "@frag-note/testing": "workspace:*",
     "@types/bun": "^1.3.2"
   }
 }

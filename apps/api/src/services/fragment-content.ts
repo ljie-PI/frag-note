@@ -1,4 +1,4 @@
-import type { Fragment } from '@sui-note/domain';
+import type { Fragment } from '@frag-note/domain';
 
 export type FragmentAssetPointer = {
   fileName: string;

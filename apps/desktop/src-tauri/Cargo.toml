@@ -1,10 +1,10 @@
 [package]
-name = "sui-note-desktop"
+name = "frag-note-desktop"
 version = "0.1.0"
 edition = "2021"
 
 [lib]
-name = "sui_note_desktop"
+name = "frag_note_desktop"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]

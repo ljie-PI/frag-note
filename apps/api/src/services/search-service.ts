@@ -1,4 +1,4 @@
-import type { AnswerArtifact } from '@sui-note/domain';
+import type { AnswerArtifact } from '@frag-note/domain';
 import type { AppState } from './app-state.js';
 import { buildCitationBundle } from './search/build-citation-bundle.js';
 import { generateAnswer } from './search/generate-answer.js';

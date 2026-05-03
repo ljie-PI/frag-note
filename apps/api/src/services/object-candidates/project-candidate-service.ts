@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import type { DerivedObject, Fragment } from '@sui-note/domain';
+import type { DerivedObject, Fragment } from '@frag-note/domain';
 
 export function buildProjectCandidates(fragments: Fragment[]): DerivedObject[] {
   const projectFragments = fragments.filter((fragment) =>

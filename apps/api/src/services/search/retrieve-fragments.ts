@@ -1,4 +1,4 @@
-import type { DerivedArtifact, Fragment } from '@sui-note/domain';
+import type { DerivedArtifact, Fragment } from '@frag-note/domain';
 import type { AppState } from '../app-state.js';
 import { expandDerivedObjects } from './expand-derived-objects.js';
 import { expandRelations } from './expand-relations.js';

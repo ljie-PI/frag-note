@@ -1,4 +1,4 @@
-import type { DerivedObject } from '@sui-note/domain';
+import type { DerivedObject } from '@frag-note/domain';
 import { ReviewActions } from './review-actions.tsx';
 
 export function CandidateCard({

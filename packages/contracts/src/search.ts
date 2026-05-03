@@ -2,7 +2,7 @@ import { z } from 'zod';
 import {
   citationLocatorSchema,
   queryTypeSchema,
-} from '@sui-note/domain';
+} from '@frag-note/domain';
 
 export const searchResultObjectTypeSchema = z.enum([
   'fragment',

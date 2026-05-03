@@ -4,7 +4,7 @@ import type {
   Fragment,
   ProcessingJob,
   Relation,
-} from '@sui-note/domain';
+} from '@frag-note/domain';
 import type { CaptureStore, LocalFragmentRecord } from '../capture/capture-store.ts';
 
 export type DesktopApiClient = {

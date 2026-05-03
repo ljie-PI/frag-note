@@ -2,7 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import {
   createDeviceSessionRequestSchema,
   createDeviceSessionResponseSchema,
-} from '@sui-note/contracts/auth';
+} from '@frag-note/contracts/auth';
 import type { AuthResolver } from '../lib/request-auth.js';
 import type { ApiRuntime } from '../runtime/runtime.js';
 

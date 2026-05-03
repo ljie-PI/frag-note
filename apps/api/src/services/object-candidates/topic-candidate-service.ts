@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import type { DerivedObject, Fragment } from '@sui-note/domain';
+import type { DerivedObject, Fragment } from '@frag-note/domain';
 import type { AppState } from '../app-state.js';
 import { tokenizeText } from '../text-utils.js';
 

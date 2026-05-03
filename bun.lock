@@ -3,15 +3,15 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "sui-note",
+      "name": "frag-note",
       "devDependencies": {
         "@types/bun": "^1.3.2",
       },
     },
     "apps/api": {
-      "name": "@sui-note/api",
+      "name": "@frag-note/api",
       "dependencies": {
-        "@sui-note/contracts": "workspace:*",
+        "@frag-note/contracts": "workspace:*",
         "drizzle-orm": "^0.45.2",
         "fastify": "^5.6.1",
       },
@@ -23,9 +23,9 @@
       },
     },
     "apps/desktop": {
-      "name": "@sui-note/desktop",
+      "name": "@frag-note/desktop",
       "dependencies": {
-        "@sui-note/contracts": "workspace:*",
+        "@frag-note/contracts": "workspace:*",
         "@tauri-apps/api": "^2.8.0",
         "@tauri-apps/plugin-clipboard-manager": "^2.3.2",
         "@tauri-apps/plugin-global-shortcut": "^2.3.1",
@@ -45,31 +45,31 @@
       },
     },
     "packages/config": {
-      "name": "@sui-note/config",
+      "name": "@frag-note/config",
     },
     "packages/contracts": {
-      "name": "@sui-note/contracts",
+      "name": "@frag-note/contracts",
       "dependencies": {
-        "@sui-note/domain": "workspace:*",
+        "@frag-note/domain": "workspace:*",
         "zod": "^4.1.11",
       },
       "devDependencies": {
-        "@sui-note/testing": "workspace:*",
+        "@frag-note/testing": "workspace:*",
         "@types/bun": "^1.3.2",
       },
     },
     "packages/domain": {
-      "name": "@sui-note/domain",
+      "name": "@frag-note/domain",
       "dependencies": {
         "zod": "^4.1.11",
       },
       "devDependencies": {
-        "@sui-note/testing": "workspace:*",
+        "@frag-note/testing": "workspace:*",
         "@types/bun": "^1.3.2",
       },
     },
     "packages/testing": {
-      "name": "@sui-note/testing",
+      "name": "@frag-note/testing",
     },
   },
   "packages": {
@@ -245,17 +245,17 @@
 
     "@rollup/rollup-win32-x64-msvc": ["@rollup/rollup-win32-x64-msvc@4.60.0", "", { "os": "win32", "cpu": "x64" }, "sha512-PrsWNQ8BuE00O3Xsx3ALh2Df8fAj9+cvvX9AIA6o4KpATR98c9mud4XtDWVvsEuyia5U4tVSTKygawyJkjm60w=="],
 
-    "@sui-note/api": ["@sui-note/api@workspace:apps/api"],
+    "@frag-note/api": ["@frag-note/api@workspace:apps/api"],
 
-    "@sui-note/config": ["@sui-note/config@workspace:packages/config"],
+    "@frag-note/config": ["@frag-note/config@workspace:packages/config"],
 
-    "@sui-note/contracts": ["@sui-note/contracts@workspace:packages/contracts"],
+    "@frag-note/contracts": ["@frag-note/contracts@workspace:packages/contracts"],
 
-    "@sui-note/desktop": ["@sui-note/desktop@workspace:apps/desktop"],
+    "@frag-note/desktop": ["@frag-note/desktop@workspace:apps/desktop"],
 
-    "@sui-note/domain": ["@sui-note/domain@workspace:packages/domain"],
+    "@frag-note/domain": ["@frag-note/domain@workspace:packages/domain"],
 
-    "@sui-note/testing": ["@sui-note/testing@workspace:packages/testing"],
+    "@frag-note/testing": ["@frag-note/testing@workspace:packages/testing"],
 
     "@tailwindcss/node": ["@tailwindcss/node@4.2.2", "", { "dependencies": { "@jridgewell/remapping": "^2.3.5", "enhanced-resolve": "^5.19.0", "jiti": "^2.6.1", "lightningcss": "1.32.0", "magic-string": "^0.30.21", "source-map-js": "^1.2.1", "tailwindcss": "4.2.2" } }, "sha512-pXS+wJ2gZpVXqFaUEjojq7jzMpTGf8rU6ipJz5ovJV6PUGmlJ+jvIwGrzdHdQ80Sg+wmQxUFuoW1UAAwHNEdFA=="],
 

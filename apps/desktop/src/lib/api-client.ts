@@ -6,7 +6,7 @@ import type {
   Fragment,
   ProcessingJob,
   Relation,
-} from '@sui-note/domain';
+} from '@frag-note/domain';
 import { invoke } from '@tauri-apps/api/core';
 import { ensureSupabaseSession } from './auth-client.ts';
 import type { DesktopApiClient } from '../features/sync/sync-service.ts';

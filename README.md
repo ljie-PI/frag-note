@@ -1,4 +1,4 @@
-# sui-note
+# frag-note
 
 An AI-powered note-taking app for capturing fragmented notes anytime, anywhere. 碎记&随记
 
@@ -80,7 +80,7 @@ export SUPABASE_ANON_KEY="<anon-key>"
 export SUPABASE_SERVICE_ROLE_KEY="<service-role-key>"
 export SUPABASE_STORAGE_RAW_BUCKET="captures-raw"
 export SUPABASE_STORAGE_DERIVED_BUCKET="captures-derived"
-export SUPABASE_DB_URL="postgresql://postgres:postgres@127.0.0.1:5432/sui_note"
+export SUPABASE_DB_URL="postgresql://postgres:postgres@127.0.0.1:5432/frag_note"
 export LLM_API_KEY="<optional-api-key>"
 export LLM_BASE_URL="https://api.openai.com/v1"
 export SUMMARY_MODEL="gpt-4.1-mini"
@@ -152,26 +152,26 @@ bun install
 Terminal 1, start the API shell:
 
 ```bash
-bun --env-file=.env run --filter @sui-note/api build
-bun --env-file=.env run --filter @sui-note/api start
+bun --env-file=.env run --filter @frag-note/api build
+bun --env-file=.env run --filter @frag-note/api start
 ```
 
 Terminal 2, start the worker:
 
 ```bash
-bun --env-file=.env run --filter @sui-note/api start:worker
+bun --env-file=.env run --filter @frag-note/api start:worker
 ```
 
 Terminal 3, start the desktop UI in the browser:
 
 ```bash
-bun --env-file=.env run --filter @sui-note/desktop dev
+bun --env-file=.env run --filter @frag-note/desktop dev
 ```
 
 Optional, start the native desktop shell:
 
 ```bash
-bun --env-file=.env run --filter @sui-note/desktop tauri:dev
+bun --env-file=.env run --filter @frag-note/desktop tauri:dev
 ```
 
 ## Common Commands
@@ -191,13 +191,13 @@ bun run test
 Run API tests only:
 
 ```bash
-bun --env-file=.env run --filter @sui-note/api test
+bun --env-file=.env run --filter @frag-note/api test
 ```
 
 Run desktop tests only:
 
 ```bash
-bun --env-file=.env run --filter @sui-note/desktop test
+bun --env-file=.env run --filter @frag-note/desktop test
 ```
 
 ## Production Notes

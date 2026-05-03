@@ -1,4 +1,4 @@
-import type { DerivedObject } from '@sui-note/domain';
+import type { DerivedObject } from '@frag-note/domain';
 import { CandidateCard } from '../../features/organization/candidate-card.tsx';
 import { FolderKanban } from 'lucide-react';
 

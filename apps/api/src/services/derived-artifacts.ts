@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import type { Citation, DerivedArtifact, Fragment } from '@sui-note/domain';
+import type { Citation, DerivedArtifact, Fragment } from '@frag-note/domain';
 import {
   parseFragmentPayload,
   type FragmentAssetPointer,

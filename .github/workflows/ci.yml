@@ -23,7 +23,7 @@ jobs:
         run: bun install
 
       - name: Test API
-        run: bun run --filter @sui-note/api test:shell
+        run: bun run --filter @frag-note/api test:shell
 
       - name: Build API
-        run: bun run --filter @sui-note/api build
+        run: bun run --filter @frag-note/api build

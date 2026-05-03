@@ -1,5 +1,5 @@
-import type { AnswerArtifact, DerivedObject, Fragment } from '@sui-note/domain';
-import type { CreateDeviceSessionResponse } from '@sui-note/contracts/auth';
+import type { AnswerArtifact, DerivedObject, Fragment } from '@frag-note/domain';
+import type { CreateDeviceSessionResponse } from '@frag-note/contracts/auth';
 import type { RequestAuthContext } from '../lib/request-auth.js';
 import type { FragmentDetail, CreateFragmentInput } from '../services/fragment-ingestion.js';
 

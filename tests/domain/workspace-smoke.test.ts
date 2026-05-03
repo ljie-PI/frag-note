@@ -27,7 +27,7 @@ function collectTypeScriptFiles(dir: string): string[] {
 
 describe('workspace packages', () => {
   it('loads the canonical package entrypoints', async () => {
-    const domain = await import('@sui-note/domain');
+    const domain = await import('@frag-note/domain');
     expect(domain).toBeDefined();
   });
 

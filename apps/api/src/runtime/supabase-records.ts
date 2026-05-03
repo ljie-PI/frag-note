@@ -8,7 +8,7 @@ import type {
   Fragment,
   ProcessingJob,
   Relation,
-} from '@sui-note/domain';
+} from '@frag-note/domain';
 
 type JsonRecord = Record<string, unknown>;
 

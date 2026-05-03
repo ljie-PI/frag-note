@@ -1,5 +1,5 @@
 {
-  "name": "@sui-note/api",
+  "name": "@frag-note/api",
   "private": true,
   "type": "module",
   "scripts": {
@@ -14,7 +14,7 @@
     "lint": "bun -e \"process.exit(0)\""
   },
   "dependencies": {
-    "@sui-note/contracts": "workspace:*",
+    "@frag-note/contracts": "workspace:*",
     "drizzle-orm": "^0.45.2",
     "fastify": "^5.6.1"
   },

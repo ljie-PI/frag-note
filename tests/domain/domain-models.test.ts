@@ -17,7 +17,7 @@ import {
   seedFragments,
   seedProcessingJob,
   seedRelation,
-} from '@sui-note/testing';
+} from '@frag-note/testing';
 
 describe('domain models', () => {
   it('parses the canonical fragment-first object family', () => {

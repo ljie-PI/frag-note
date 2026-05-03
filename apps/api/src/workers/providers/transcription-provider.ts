@@ -1,4 +1,4 @@
-import type { Fragment } from '@sui-note/domain';
+import type { Fragment } from '@frag-note/domain';
 import { transcribeAudioBytes } from '../../lib/openai-client.js';
 import type { FragmentAssetPointer } from '../../services/fragment-content.js';
 

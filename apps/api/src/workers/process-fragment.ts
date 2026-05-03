@@ -1,4 +1,4 @@
-import type { Fragment, ProcessingJob } from '@sui-note/domain';
+import type { Fragment, ProcessingJob } from '@frag-note/domain';
 import type { AppState } from '../services/app-state.js';
 import { buildDerivedArtifactsForFragment } from '../services/derived-artifacts.js';
 import { buildRelatedFragmentLinks } from '../services/relation-linking.js';
