@@ -1,10 +1,12 @@
 mod commands;
 
+use serde::Serialize;
 use std::sync::Mutex;
 use std::time::{Duration, Instant};
-use serde::Serialize;
 use tauri::{Emitter, Manager};
-use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState as GsState};
+use tauri_plugin_global_shortcut::{
+    Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState as GsState,
+};
 
 #[derive(Default)]
 pub struct ShortcutState {
@@ -106,10 +108,13 @@ pub fn run() {
                         std::thread::spawn(move || {
                             let text = grab_selection();
                             if let Some(win) = app_handle.get_webview_window("quick-capture") {
-                                let _ = win.emit("quick-capture", QuickCapturePayload {
-                                    mode: "clipboard".into(),
-                                    text,
-                                });
+                                let _ = win.emit(
+                                    "quick-capture",
+                                    QuickCapturePayload {
+                                        mode: "clipboard".into(),
+                                        text,
+                                    },
+                                );
                             }
                         });
                     } else if *shortcut == alt_shift_s {
@@ -122,7 +127,10 @@ pub fn run() {
                         }
                     } else {
                         let payload = if *shortcut == alt_shift_v {
-                            QuickCapturePayload { mode: "voice".into(), text: String::new() }
+                            QuickCapturePayload {
+                                mode: "voice".into(),
+                                text: String::new(),
+                            }
                         } else {
                             return;
                         };
@@ -137,6 +145,7 @@ pub fn run() {
                 .build(),
         )
         .manage(ShortcutState::default())
+        .manage(commands::screenshot::PendingScreenshotOverlayRequest::default())
         .setup(move |app| {
             // Register global shortcuts
             let gs = app.global_shortcut();
@@ -155,7 +164,8 @@ pub fn run() {
                     let win_h = 240.0;
                     let x = (logical_w - win_w) / 2.0;
                     let y = logical_h - win_h - 48.0;
-                    let _ = win.set_position(tauri::Position::Logical(tauri::LogicalPosition::new(x, y)));
+                    let _ = win
+                        .set_position(tauri::Position::Logical(tauri::LogicalPosition::new(x, y)));
                 }
             }
 
@@ -173,6 +183,7 @@ pub fn run() {
             commands::screenshot::capture_monitor_at_cursor,
             commands::screenshot::show_screenshot_overlay,
             commands::screenshot::hide_screenshot_overlay,
+            commands::screenshot::take_pending_screenshot_overlay_request,
             commands::shortcuts::register_capture_shortcut,
             commands::shortcuts::current_capture_shortcut,
         ])

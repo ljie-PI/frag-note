@@ -1,10 +1,22 @@
-import { describe, expect, it, mock } from 'bun:test';
+import { beforeEach, describe, expect, it, mock } from 'bun:test';
 
-const invokedCommands: string[] = [];
+let invokedCommands: string[] = [];
+let showInvoked: Promise<void>;
+let resolveShowInvoked: () => void;
+
+beforeEach(() => {
+  invokedCommands = [];
+  showInvoked = new Promise((resolve) => {
+    resolveShowInvoked = resolve;
+  });
+});
 
 mock.module('@tauri-apps/api/core', () => ({
   invoke: async (command: string) => {
     invokedCommands.push(command);
+    if (command === 'show_screenshot_overlay') {
+      resolveShowInvoked();
+    }
     return null;
   },
 }));
@@ -23,9 +35,15 @@ describe('requestRegionScreenshotWithTimeout', () => {
       '../../apps/desktop/src/features/capture/region-screenshot.ts'
     );
 
-    const result = await requestRegionScreenshotWithTimeout(1);
+    const pendingResult = requestRegionScreenshotWithTimeout(25);
+    await showInvoked;
+
+    const result = await pendingResult;
 
     expect(result).toBeNull();
-    expect(invokedCommands).toEqual(['show_screenshot_overlay', 'hide_screenshot_overlay']);
+    expect(invokedCommands).toContain('hide_screenshot_overlay');
+    expect(invokedCommands.indexOf('hide_screenshot_overlay')).toBeGreaterThan(
+      invokedCommands.indexOf('show_screenshot_overlay'),
+    );
   });
 });

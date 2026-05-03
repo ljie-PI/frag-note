@@ -96,6 +96,14 @@ export function ScreenshotOverlay() {
 
   useEffect(() => {
     const currentWindow = getCurrentWindow();
+    const loadPendingScreens = async (fallbackToCurrentRequest = false) => {
+      const pendingRequest = await takePendingOverlayRequest();
+      if (pendingRequest) {
+        await loadScreens(pendingRequest);
+      } else if (fallbackToCurrentRequest) {
+        await loadScreens(requestRef.current);
+      }
+    };
     const unlistenRequest = currentWindow.listen<OverlayRequest>(
       'screenshot-overlay-request',
       (event) => {
@@ -104,9 +112,11 @@ export function ScreenshotOverlay() {
     );
     const unlistenFocus = currentWindow.onFocusChanged(({ payload: focused }) => {
       if (focused && !monitorRef.current) {
-        void loadScreens();
+        void loadPendingScreens(true);
       }
     });
+
+    void loadPendingScreens();
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
@@ -274,6 +284,10 @@ async function captureRequestedMonitor(request: OverlayRequest) {
   }
 
   return invoke<MonitorCapture>('capture_monitor_at_cursor');
+}
+
+async function takePendingOverlayRequest() {
+  return invoke<OverlayRequest | null>('take_pending_screenshot_overlay_request').catch(() => null);
 }
 
 function rectFromDrag({ start, end }: DragState): SelectionRect {
