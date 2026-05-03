@@ -4,6 +4,10 @@ import { getCurrentWindow } from '@tauri-apps/api/window';
 import { createCaptureStore } from '../features/capture/capture-store.ts';
 import { createDesktopAdapter } from '../lib/desktop-adapter.ts';
 import { CapturePalette, type CapturePaletteRef } from '../features/capture/CapturePalette.tsx';
+import {
+  screenshotPayloadToAsset,
+  type RegionScreenshotPayload,
+} from '../features/capture/region-screenshot.ts';
 
 const ANIM_DURATION = 200;
 
@@ -56,6 +60,23 @@ export function QuickCapture() {
       } else if (mode === 'voice') {
         await paletteRef.current?.startRecording();
       }
+    });
+
+    return () => { unlisten.then((fn) => fn()); };
+  }, []);
+
+  // Alt+Shift+S opens the overlay directly from Rust; the overlay targets this
+  // hidden window so the captured image lands in the same quick-capture palette.
+  useEffect(() => {
+    const unlisten = listen<RegionScreenshotPayload>('screenshot-captured', async (event) => {
+      if (event.payload.requestId || event.payload.targetLabel !== 'quick-capture') return;
+
+      closingRef.current = false;
+      paletteRef.current?.addAsset(screenshotPayloadToAsset(event.payload));
+      await getCurrentWindow().show();
+      await getCurrentWindow().setFocus();
+      setVisible(true);
+      setTimeout(() => paletteRef.current?.focusInput(), 50);
     });
 
     return () => { unlisten.then((fn) => fn()); };

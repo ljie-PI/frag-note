@@ -33,6 +33,19 @@
         "visible": false,
         "resizable": false,
         "skipTaskbar": true
+      },
+      {
+        "label": "screenshot-overlay",
+        "url": "/screenshot-overlay.html",
+        "decorations": false,
+        "transparent": true,
+        "alwaysOnTop": true,
+        "skipTaskbar": true,
+        "visible": false,
+        "resizable": false,
+        "fullscreen": true,
+        "shadow": false,
+        "focus": true
       }
     ]
   },

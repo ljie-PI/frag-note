@@ -112,10 +112,16 @@ pub fn run() {
                                 });
                             }
                         });
+                    } else if *shortcut == alt_shift_s {
+                        if let Err(error) = commands::screenshot::show_screenshot_overlay_window(
+                            app,
+                            None,
+                            Some("quick-capture".into()),
+                        ) {
+                            eprintln!("failed to show screenshot overlay: {error}");
+                        }
                     } else {
-                        let payload = if *shortcut == alt_shift_s {
-                            QuickCapturePayload { mode: "screenshot".into(), text: String::new() }
-                        } else if *shortcut == alt_shift_v {
+                        let payload = if *shortcut == alt_shift_v {
                             QuickCapturePayload { mode: "voice".into(), text: String::new() }
                         } else {
                             return;
@@ -162,6 +168,8 @@ pub fn run() {
             commands::storage::create_screenshot_placeholder,
             commands::storage::create_voice_placeholder,
             commands::storage::read_local_asset_base64,
+            commands::screenshot::capture_screens,
+            commands::screenshot::show_screenshot_overlay,
             commands::shortcuts::register_capture_shortcut,
             commands::shortcuts::current_capture_shortcut,
         ])
