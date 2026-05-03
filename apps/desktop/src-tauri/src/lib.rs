@@ -1,10 +1,13 @@
 mod commands;
 
-use std::sync::Mutex;
-use std::time::{Duration, Instant};
 use serde::Serialize;
+use std::collections::HashSet;
+use std::sync::{Mutex, OnceLock};
+use std::time::Duration;
 use tauri::{Emitter, Manager};
-use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState as GsState};
+use tauri_plugin_global_shortcut::{
+    Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState as GsState,
+};
 
 #[derive(Default)]
 pub struct ShortcutState {
@@ -17,67 +20,124 @@ struct QuickCapturePayload {
     text: String,
 }
 
-/// Simulate Ctrl+C on Windows to copy the current selection to clipboard.
-#[cfg(target_os = "windows")]
-fn simulate_ctrl_c() {
-    extern "system" {
-        fn keybd_event(b_vk: u8, b_scan: u8, dw_flags: u32, dw_extra_info: usize);
-    }
-    const VK_CONTROL: u8 = 0x11;
-    const VK_C: u8 = 0x43;
-    const KEYEVENTF_KEYUP: u32 = 0x0002;
+static EMITTED_ONE_SHOT_EVENTS: OnceLock<Mutex<HashSet<String>>> = OnceLock::new();
 
-    unsafe {
-        keybd_event(VK_CONTROL, 0, 0, 0);
-        keybd_event(VK_C, 0, 0, 0);
-        keybd_event(VK_C, 0, KEYEVENTF_KEYUP, 0);
-        keybd_event(VK_CONTROL, 0, KEYEVENTF_KEYUP, 0);
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum CopyShortcutResult {
+    Sent,
+    SkippedWayland,
+    PermissionDenied,
+}
+
+enum ClipboardTextSnapshot {
+    Text(String),
+    Empty,
+}
+
+fn is_wayland_session() -> bool {
+    std::env::var("WAYLAND_DISPLAY").is_ok()
+        && std::env::var("XDG_SESSION_TYPE")
+            .map(|value| value.eq_ignore_ascii_case("wayland"))
+            .unwrap_or(false)
+}
+
+fn simulate_copy_shortcut() -> CopyShortcutResult {
+    if is_wayland_session() {
+        return CopyShortcutResult::SkippedWayland;
+    }
+
+    use enigo::{Direction, Enigo, Key, Keyboard, Settings};
+
+    let mut enigo = match Enigo::new(&Settings::default()) {
+        Ok(enigo) => enigo,
+        Err(_) => return CopyShortcutResult::PermissionDenied,
+    };
+
+    #[cfg(target_os = "macos")]
+    let modifier = Key::Meta;
+    #[cfg(not(target_os = "macos"))]
+    let modifier = Key::Control;
+
+    if enigo.key(modifier, Direction::Press).is_err() {
+        return CopyShortcutResult::PermissionDenied;
+    }
+
+    let click_result = enigo.key(Key::Unicode('c'), Direction::Click);
+    let release_result = enigo.key(modifier, Direction::Release);
+
+    if click_result.and(release_result).is_ok() {
+        CopyShortcutResult::Sent
+    } else {
+        CopyShortcutResult::PermissionDenied
     }
 }
 
-#[cfg(not(target_os = "windows"))]
-fn simulate_ctrl_c() {
-    // Not implemented for non-Windows platforms
+fn capture_clipboard_text_snapshot() -> Option<ClipboardTextSnapshot> {
+    let Ok(mut clipboard) = arboard::Clipboard::new() else {
+        return None;
+    };
+
+    Some(match clipboard.get_text() {
+        Ok(text) => ClipboardTextSnapshot::Text(text),
+        Err(_) => ClipboardTextSnapshot::Empty,
+    })
 }
 
-/// Grab the currently selected text from any application.
-/// Clears clipboard, simulates Ctrl+C, polls for up to 500ms.
-fn grab_selection() -> String {
+fn restore_clipboard_text(snapshot: ClipboardTextSnapshot) {
+    let Ok(mut clipboard) = arboard::Clipboard::new() else {
+        return;
+    };
+
+    match snapshot {
+        ClipboardTextSnapshot::Text(text) => {
+            let _ = clipboard.set_text(text);
+        }
+        ClipboardTextSnapshot::Empty => {
+            let _ = clipboard.clear();
+        }
+    }
+}
+
+fn grab_clipboard_text() -> String {
     let Ok(mut clipboard) = arboard::Clipboard::new() else {
         return String::new();
     };
 
-    // Save original clipboard and clear
-    let original = clipboard.get_text().ok();
-    let _ = clipboard.clear();
+    clipboard.get_text().unwrap_or_default()
+}
 
-    // Simulate Ctrl+C
-    simulate_ctrl_c();
-
-    // Give the target app time to process Ctrl+C
-    std::thread::sleep(Duration::from_millis(80));
-
-    // Poll clipboard every 50ms for up to 500ms
-    let start = Instant::now();
-    let mut selected = String::new();
-    while start.elapsed() < Duration::from_millis(500) {
-        if let Ok(text) = clipboard.get_text() {
-            if !text.is_empty() {
-                selected = text;
-                break;
-            }
-        }
-        std::thread::sleep(Duration::from_millis(50));
+fn emit_quick_capture(app: &tauri::AppHandle, mode: &str, text: String) {
+    if let Some(win) = app.get_webview_window("quick-capture") {
+        let _ = win.emit(
+            "quick-capture",
+            QuickCapturePayload {
+                mode: mode.into(),
+                text,
+            },
+        );
     }
+}
 
-    // Restore original clipboard
-    if let Some(orig) = original {
-        let _ = clipboard.set_text(orig);
-    } else {
-        let _ = clipboard.clear();
+fn emit_one_shot_event(app: &tauri::AppHandle, name: &str) {
+    let emitted_events = EMITTED_ONE_SHOT_EVENTS.get_or_init(|| Mutex::new(HashSet::new()));
+    let Ok(mut emitted_events) = emitted_events.lock() else {
+        return;
+    };
+
+    if !emitted_events.insert(name.to_string()) {
+        return;
     }
+    drop(emitted_events);
 
-    selected
+    let _ = app.emit(name, ());
+}
+
+fn emit_accessibility_permission_needed(app: &tauri::AppHandle) {
+    #[cfg(target_os = "macos")]
+    emit_one_shot_event(app, "accessibility-permission-needed");
+
+    #[cfg(not(target_os = "macos"))]
+    let _ = app;
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -101,15 +161,35 @@ pub fn run() {
                             let _ = win.show();
                             let _ = win.set_focus();
                         }
-                        // Grab selection in background thread, then emit
+
                         let app_handle = app.clone();
                         std::thread::spawn(move || {
-                            let text = grab_selection();
-                            if let Some(win) = app_handle.get_webview_window("quick-capture") {
-                                let _ = win.emit("quick-capture", QuickCapturePayload {
-                                    mode: "clipboard".into(),
-                                    text,
-                                });
+                            let original_clipboard = if is_wayland_session() {
+                                None
+                            } else {
+                                capture_clipboard_text_snapshot()
+                            };
+                            let result = simulate_copy_shortcut();
+
+                            match result {
+                                CopyShortcutResult::Sent => {
+                                    std::thread::sleep(Duration::from_millis(80));
+                                    let updated = grab_clipboard_text();
+                                    emit_quick_capture(&app_handle, "clipboard", updated);
+                                    if let Some(snapshot) = original_clipboard {
+                                        restore_clipboard_text(snapshot);
+                                    }
+                                }
+                                CopyShortcutResult::SkippedWayland => {
+                                    let text = grab_clipboard_text();
+                                    emit_quick_capture(&app_handle, "clipboard", text);
+                                    emit_one_shot_event(&app_handle, "wayland-clipboard-fallback");
+                                }
+                                CopyShortcutResult::PermissionDenied => {
+                                    emit_accessibility_permission_needed(&app_handle);
+                                    let text = grab_clipboard_text();
+                                    emit_quick_capture(&app_handle, "clipboard", text);
+                                }
                             }
                         });
                     } else {
@@ -164,6 +244,7 @@ pub fn run() {
             commands::storage::read_local_asset_base64,
             commands::shortcuts::register_capture_shortcut,
             commands::shortcuts::current_capture_shortcut,
+            commands::shortcuts::open_macos_accessibility_settings,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

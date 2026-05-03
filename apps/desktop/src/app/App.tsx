@@ -19,6 +19,7 @@ import { OrganizationPage } from './routes/organization.tsx';
 import { DerivedObjectDetailPage } from './routes/derived-object-detail.tsx';
 import { SearchPage } from './routes/search.tsx';
 import { AuthGate } from './routes/auth-gate.tsx';
+import { ShortcutNoticeToaster } from '../components/notice-toast.tsx';
 import { TitleBar } from './TitleBar.tsx';
 
 type AppProps = {
@@ -184,6 +185,7 @@ export function App({ apiClient: providedApiClient }: AppProps = {}) {
           <main className="flex-1 flex items-center justify-center">
             <h1 className="text-2xl font-bold text-slate-400">碎记</h1>
           </main>
+          <ShortcutNoticeToaster />
         </div>
       );
     }
@@ -206,6 +208,7 @@ export function App({ apiClient: providedApiClient }: AppProps = {}) {
             />
           </div>
         </main>
+        <ShortcutNoticeToaster />
       </div>
     );
   }
@@ -322,6 +325,7 @@ export function App({ apiClient: providedApiClient }: AppProps = {}) {
         </div>
       </main>
       </div>
+      <ShortcutNoticeToaster />
     </div>
   );
 }

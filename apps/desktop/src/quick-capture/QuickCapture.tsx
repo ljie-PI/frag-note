@@ -3,6 +3,7 @@ import { listen } from '@tauri-apps/api/event';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { createCaptureStore } from '../features/capture/capture-store.ts';
 import { createDesktopAdapter } from '../lib/desktop-adapter.ts';
+import { ShortcutNoticeToaster } from '../components/notice-toast.tsx';
 import { CapturePalette, type CapturePaletteRef } from '../features/capture/CapturePalette.tsx';
 
 const ANIM_DURATION = 200;
@@ -95,6 +96,7 @@ export function QuickCapture() {
           fillHeight
         />
       </div>
+      <ShortcutNoticeToaster />
     </div>
   );
 }
