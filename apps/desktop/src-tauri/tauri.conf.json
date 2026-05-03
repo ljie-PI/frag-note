@@ -37,6 +37,13 @@
     ]
   },
   "bundle": {
-    "active": false
+    "active": false,
+    "macOS": {
+      "minimumSystemVersion": "10.15",
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "碎记需要访问麦克风以录制语音笔记",
+        "NSScreenCaptureUsageDescription": "碎记需要屏幕录制权限以截屏"
+      }
+    }
   }
 }

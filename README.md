@@ -22,6 +22,37 @@ There is no local in-memory runtime fallback.
 - For native desktop development: Rust toolchain and Tauri system dependencies
 - Optional: OpenAI API key for provider-backed OCR, transcription, summaries, and embeddings
 
+Linux build dependencies:
+
+```bash
+# Debian / Ubuntu
+sudo apt update
+sudo apt install build-essential pkg-config libssl-dev libgtk-3-dev librsvg2-dev libsoup-3.0-dev libwebkit2gtk-4.1-dev
+
+# Fedora / RHEL
+sudo dnf install gcc gcc-c++ make pkgconf-pkg-config openssl-devel gtk3-devel librsvg2-devel libsoup3-devel webkit2gtk4.1-devel
+
+# Arch
+sudo pacman -S --needed base-devel pkgconf openssl gtk3 librsvg libsoup3 webkit2gtk-4.1
+```
+
+Linux runtime dependencies for desktop capture and clipboard integration:
+
+```bash
+# Debian / Ubuntu
+sudo apt install xdg-desktop-portal xdg-desktop-portal-gtk wl-clipboard pipewire pipewire-pulse
+
+# Fedora / RHEL
+sudo dnf install xdg-desktop-portal xdg-desktop-portal-gnome wl-clipboard pipewire pipewire-pulseaudio
+
+# Arch
+sudo pacman -S --needed xdg-desktop-portal xdg-desktop-portal-gtk wl-clipboard pipewire pipewire-pulse
+```
+
+Use the KDE portal package instead of the GNOME/GTK flavor on KDE. On Wayland, screen capture goes through `xdg-desktop-portal` and shows a one-time prompt; `arboard` clipboard access requires `wl-clipboard`.
+
+Windows 10 users need the [Microsoft Edge WebView2 Runtime](https://developer.microsoft.com/microsoft-edge/webview2/?form=MA13LH#download) installed. Windows 11 ships it by default.
+
 If `bun install` appears to hang behind a local proxy, unset proxy variables and retry:
 
 ```bash
