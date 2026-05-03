@@ -23,12 +23,16 @@ export function useVoiceRecorder(onRecorded: (asset: LocalAssetPointer) => void)
         }
       };
       mediaRecorder.onstop = async () => {
-        // Chromium records webm/opus while WKWebView records mp4/aac, so keep the browser-reported type.
-        const mimeType = mediaRecorder.mimeType;
-        const blob = new Blob(chunksRef.current, { type: mimeType });
+        // WKWebView records audio/mp4; Chromium/WebView2 records audio/webm;
+        // some runtimes leave recorder.mimeType empty when no type is requested.
+        const recorderMime = mediaRecorder.mimeType;
+        const blob = new Blob(chunksRef.current, {
+          type: recorderMime || 'audio/webm',
+        });
+        const metadata = resolveAudioAssetMime(recorderMime, blob.type);
         onRecorded({
-          fileName: `voice-${Date.now()}${audioExtensionForMimeType(mimeType)}`,
-          mimeType,
+          fileName: `voice-${Date.now()}${metadata.extension}`,
+          mimeType: metadata.mimeType,
           byteSize: blob.size,
           base64Data: await blobToBase64(blob),
         });
@@ -85,6 +89,15 @@ function audioExtensionForMimeType(mimeType: string) {
   }
 
   return '.bin';
+}
+
+export function resolveAudioAssetMime(recorderMime: string, blobType: string) {
+  const mimeType = recorderMime || blobType || 'audio/webm';
+
+  return {
+    mimeType,
+    extension: audioExtensionForMimeType(mimeType),
+  };
 }
 
 async function blobToBase64(blob: Blob) {
