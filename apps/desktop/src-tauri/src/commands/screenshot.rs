@@ -96,6 +96,14 @@ pub fn show_screenshot_overlay(
     show_screenshot_overlay_window(&app, request_id, target_label)
 }
 
+#[tauri::command]
+pub fn hide_screenshot_overlay(app: AppHandle) -> Result<(), String> {
+    app.get_webview_window("screenshot-overlay")
+        .ok_or_else(|| String::from("screenshot-overlay window not found"))?
+        .hide()
+        .map_err(|error| error.to_string())
+}
+
 pub fn show_screenshot_overlay_window(
     app: &AppHandle,
     request_id: Option<String>,

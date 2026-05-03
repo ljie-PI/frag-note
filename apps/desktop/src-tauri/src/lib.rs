@@ -172,6 +172,7 @@ pub fn run() {
             commands::screenshot::capture_monitor_at_point,
             commands::screenshot::capture_monitor_at_cursor,
             commands::screenshot::show_screenshot_overlay,
+            commands::screenshot::hide_screenshot_overlay,
             commands::shortcuts::register_capture_shortcut,
             commands::shortcuts::current_capture_shortcut,
         ])

@@ -18,8 +18,15 @@ export type RegionScreenshotCancelledPayload = {
 };
 
 let requestSequence = 0;
+const REGION_SCREENSHOT_TIMEOUT_MS = 60_000;
 
 export async function requestRegionScreenshot(): Promise<LocalAssetPointer | null> {
+  return requestRegionScreenshotWithTimeout(REGION_SCREENSHOT_TIMEOUT_MS);
+}
+
+export async function requestRegionScreenshotWithTimeout(
+  timeoutMs: number,
+): Promise<LocalAssetPointer | null> {
   const requestId = `region-screenshot-${Date.now()}-${++requestSequence}`;
   const targetLabel = getCurrentWindow().label;
 
@@ -27,13 +34,26 @@ export async function requestRegionScreenshot(): Promise<LocalAssetPointer | nul
     let resolved = false;
     let timeout: ReturnType<typeof setTimeout> | undefined;
 
+    const cleanupListeners = () => {
+      void unlistenCaptured.then((fn) => fn());
+      void unlistenCancelled.then((fn) => fn());
+    };
+
     const resolveOnce = (asset: LocalAssetPointer | null) => {
       if (resolved) return;
       resolved = true;
       if (timeout) clearTimeout(timeout);
-      void unlistenCaptured.then((fn) => fn());
-      void unlistenCancelled.then((fn) => fn());
+      cleanupListeners();
       resolve(asset);
+    };
+
+    const resolveTimedOut = async () => {
+      if (resolved) return;
+      resolved = true;
+      if (timeout) clearTimeout(timeout);
+      await invoke('hide_screenshot_overlay').catch(() => {});
+      cleanupListeners();
+      resolve(null);
     };
 
     const unlistenCaptured = listen<RegionScreenshotPayload>(
@@ -52,7 +72,9 @@ export async function requestRegionScreenshot(): Promise<LocalAssetPointer | nul
       },
     );
 
-    timeout = setTimeout(() => resolveOnce(null), 60_000);
+    timeout = setTimeout(() => {
+      void resolveTimedOut();
+    }, timeoutMs);
 
     void Promise.all([unlistenCaptured, unlistenCancelled])
       .then(() => invoke('show_screenshot_overlay', { requestId, targetLabel }))
