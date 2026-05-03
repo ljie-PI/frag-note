@@ -68,7 +68,7 @@ describe('desktop app shell', () => {
     expect(storage.has('sui-note:sidebar-width')).toBe(false);
   });
 
-  it('does not overwrite an existing frag-note sidebar width', () => {
+  it('removes the legacy key but does not overwrite an existing frag-note sidebar width', () => {
     const storage = installMemoryLocalStorage({
       'frag-note:sidebar-width': '300',
       'sui-note:sidebar-width': '220',
@@ -77,7 +77,7 @@ describe('desktop app shell', () => {
     renderToStaticMarkup(<App apiClient={createDesktopApiClientStub()} />);
 
     expect(storage.get('frag-note:sidebar-width')).toBe('300');
-    expect(storage.has('sui-note:sidebar-width')).toBe(true);
+    expect(storage.has('sui-note:sidebar-width')).toBe(false);
   });
 });
 

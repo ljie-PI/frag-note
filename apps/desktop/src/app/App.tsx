@@ -87,16 +87,18 @@ export function App({ apiClient: providedApiClient }: AppProps = {}) {
   const [sidebarWidth, setSidebarWidth] = useState(() => {
     try {
       let saved = localStorage.getItem(SIDEBAR_KEY);
-      if (saved === null) {
-        for (const legacyKey of LEGACY_SIDEBAR_KEYS) {
-          const legacyValue = localStorage.getItem(legacyKey);
-          if (legacyValue !== null) {
-            localStorage.setItem(SIDEBAR_KEY, legacyValue);
-            localStorage.removeItem(legacyKey);
-            saved = legacyValue;
-            break;
-          }
+      // Always clean up legacy keys; only adopt their value when the new
+      // key is missing, never overwrite an existing new value.
+      for (const legacyKey of LEGACY_SIDEBAR_KEYS) {
+        const legacyValue = localStorage.getItem(legacyKey);
+        if (legacyValue === null) {
+          continue;
         }
+        if (saved === null) {
+          localStorage.setItem(SIDEBAR_KEY, legacyValue);
+          saved = legacyValue;
+        }
+        localStorage.removeItem(legacyKey);
       }
       return saved ? Math.max(200, Math.min(400, Number(saved))) : 260;
     } catch {
