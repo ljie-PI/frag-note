@@ -3,7 +3,7 @@ mod commands;
 use serde::Serialize;
 use std::collections::HashSet;
 use std::sync::{Mutex, OnceLock};
-use std::time::Duration;
+use std::time::{Duration, Instant};
 use tauri::{Emitter, Manager};
 use tauri_plugin_global_shortcut::{
     Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState as GsState,
@@ -72,22 +72,14 @@ fn simulate_copy_shortcut() -> CopyShortcutResult {
     }
 }
 
-fn capture_clipboard_text_snapshot() -> Option<ClipboardTextSnapshot> {
-    let Ok(mut clipboard) = arboard::Clipboard::new() else {
-        return None;
-    };
-
-    Some(match clipboard.get_text() {
+fn capture_clipboard_text_snapshot(clipboard: &mut arboard::Clipboard) -> ClipboardTextSnapshot {
+    match clipboard.get_text() {
         Ok(text) => ClipboardTextSnapshot::Text(text),
         Err(_) => ClipboardTextSnapshot::Empty,
-    })
+    }
 }
 
-fn restore_clipboard_text(snapshot: ClipboardTextSnapshot) {
-    let Ok(mut clipboard) = arboard::Clipboard::new() else {
-        return;
-    };
-
+fn restore_clipboard_text(clipboard: &mut arboard::Clipboard, snapshot: ClipboardTextSnapshot) {
     match snapshot {
         ClipboardTextSnapshot::Text(text) => {
             let _ = clipboard.set_text(text);
@@ -98,12 +90,98 @@ fn restore_clipboard_text(snapshot: ClipboardTextSnapshot) {
     }
 }
 
+fn clipboard_was_cleared(clipboard: &mut arboard::Clipboard) -> bool {
+    if clipboard.clear().is_err() {
+        return false;
+    }
+
+    !matches!(clipboard.get_text(), Ok(text) if !text.is_empty())
+}
+
+fn is_fresh_clipboard_text(
+    text: &str,
+    original: &ClipboardTextSnapshot,
+    clipboard_cleared: bool,
+) -> bool {
+    if text.is_empty() {
+        return false;
+    }
+
+    if clipboard_cleared {
+        return true;
+    }
+
+    match original {
+        ClipboardTextSnapshot::Text(original_text) => original_text.as_str() != text,
+        ClipboardTextSnapshot::Empty => true,
+    }
+}
+
+fn poll_fresh_clipboard_text(
+    clipboard: &mut arboard::Clipboard,
+    original: &ClipboardTextSnapshot,
+    clipboard_cleared: bool,
+) -> String {
+    let start = Instant::now();
+    while start.elapsed() < Duration::from_millis(500) {
+        if let Ok(text) = clipboard.get_text() {
+            if is_fresh_clipboard_text(&text, original, clipboard_cleared) {
+                return text;
+            }
+        }
+        std::thread::sleep(Duration::from_millis(50));
+    }
+
+    String::new()
+}
+
 fn grab_clipboard_text() -> String {
     let Ok(mut clipboard) = arboard::Clipboard::new() else {
         return String::new();
     };
 
     clipboard.get_text().unwrap_or_default()
+}
+
+/// Clear before simulating copy so the Sent path only accepts text written by the
+/// target app.
+fn grab_text_via_simulated_copy() -> (CopyShortcutResult, String) {
+    if is_wayland_session() {
+        return (CopyShortcutResult::SkippedWayland, grab_clipboard_text());
+    }
+
+    let Ok(mut clipboard) = arboard::Clipboard::new() else {
+        let result = simulate_copy_shortcut();
+        let text = match result {
+            CopyShortcutResult::Sent => String::new(),
+            CopyShortcutResult::SkippedWayland | CopyShortcutResult::PermissionDenied => {
+                grab_clipboard_text()
+            }
+        };
+        return (result, text);
+    };
+
+    let original = capture_clipboard_text_snapshot(&mut clipboard);
+    let clipboard_cleared = clipboard_was_cleared(&mut clipboard);
+
+    let result = simulate_copy_shortcut();
+    match result {
+        CopyShortcutResult::Sent => {
+            std::thread::sleep(Duration::from_millis(80));
+            let grabbed = poll_fresh_clipboard_text(&mut clipboard, &original, clipboard_cleared);
+            restore_clipboard_text(&mut clipboard, original);
+            (CopyShortcutResult::Sent, grabbed)
+        }
+        CopyShortcutResult::SkippedWayland => {
+            restore_clipboard_text(&mut clipboard, original);
+            (CopyShortcutResult::SkippedWayland, grab_clipboard_text())
+        }
+        CopyShortcutResult::PermissionDenied => {
+            restore_clipboard_text(&mut clipboard, original);
+            let text = clipboard.get_text().unwrap_or_default();
+            (CopyShortcutResult::PermissionDenied, text)
+        }
+    }
 }
 
 fn emit_quick_capture(app: &tauri::AppHandle, mode: &str, text: String) {
@@ -164,30 +242,18 @@ pub fn run() {
 
                         let app_handle = app.clone();
                         std::thread::spawn(move || {
-                            let original_clipboard = if is_wayland_session() {
-                                None
-                            } else {
-                                capture_clipboard_text_snapshot()
-                            };
-                            let result = simulate_copy_shortcut();
+                            let (result, text) = grab_text_via_simulated_copy();
 
                             match result {
                                 CopyShortcutResult::Sent => {
-                                    std::thread::sleep(Duration::from_millis(80));
-                                    let updated = grab_clipboard_text();
-                                    emit_quick_capture(&app_handle, "clipboard", updated);
-                                    if let Some(snapshot) = original_clipboard {
-                                        restore_clipboard_text(snapshot);
-                                    }
+                                    emit_quick_capture(&app_handle, "clipboard", text);
                                 }
                                 CopyShortcutResult::SkippedWayland => {
-                                    let text = grab_clipboard_text();
                                     emit_quick_capture(&app_handle, "clipboard", text);
                                     emit_one_shot_event(&app_handle, "wayland-clipboard-fallback");
                                 }
                                 CopyShortcutResult::PermissionDenied => {
                                     emit_accessibility_permission_needed(&app_handle);
-                                    let text = grab_clipboard_text();
                                     emit_quick_capture(&app_handle, "clipboard", text);
                                 }
                             }
