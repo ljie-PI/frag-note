@@ -29,7 +29,8 @@ Never import from `apps/` into `packages/`. Never import `api` from `desktop` or
 ### Data Flow
 
 ```
-Desktop capture → Supabase Auth → API ingest → processing_jobs queue
+Desktop capture → Supabase Edge Function (capture-fragment) → processing_jobs queue
+                  (or API POST /v1/fragments as alternative)
 Worker claims job → OCR/transcription → embeddings/summaries → relations → candidates
 ```
 
@@ -43,12 +44,11 @@ Worker claims job → OCR/transcription → embeddings/summaries → relations �
 ### API Runtime Interface
 - `apps/api/src/runtime/runtime.ts` — abstract `ApiRuntime` interface
 - `apps/api/src/runtime/supabase-runtime.ts` — Supabase implementation
-- Methods return `Result<T>` for operations that can fail with business errors (not found, validation)
-- Infrastructure errors (Supabase client failures) still throw via `throwIfError()`
+- Methods return `T | null` for not-found scenarios; infrastructure errors throw via `throwIfError()`
 
 ### Error Handling
-- `Result<T>` type (`packages/domain/src/result.ts`) — `ok(data)` / `err(message, code)`
-- Route handlers pattern-match on `result.ok` and map `result.code` to HTTP status
+- `throwIfError()` converts Supabase client errors to thrown exceptions
+- Route handlers check `null` returns and set appropriate HTTP status codes (400/404)
 - Global Fastify error handler catches uncaught throws → 401 (AuthorizationError) or 500
 
 ### Desktop Native Layer (Rust)
@@ -89,7 +89,7 @@ Worker claims job → OCR/transcription → embeddings/summaries → relations �
 | Search | deprecated (410) | `POST /v1/search` | API only |
 | Derived object review | `review-derived-object` | `POST /v1/derived-objects/:id/{action}` | API |
 
-API is canonical for all authenticated operations. Edge Functions `search-query` and `promote-answer` return HTTP 410.
+API is canonical for most authenticated operations. `device-session` is Edge Function only. Edge Functions `search-query` and `promote-answer` return HTTP 410.
 
 ## Verification Commands
 
