@@ -15,7 +15,7 @@ describe('E2E: Processing Pipeline', () => {
   });
 
   afterAll(() => {
-    logger.saveReport('tests/e2e/reports/processing.json');
+    logger?.saveReport('tests/e2e/reports/processing.json');
   });
 
   it('creates a fragment and verifies processing job is queued', async () => {

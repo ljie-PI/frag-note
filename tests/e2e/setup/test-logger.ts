@@ -15,7 +15,7 @@ export class TestLogger {
 
   step(name: string, detail?: unknown) {
     const now = Date.now();
-    if (this.stepStart && this.entries.length > 0) {
+    if (this.stepStart !== null && this.entries.length > 0) {
       this.entries[this.entries.length - 1].durationMs = now - this.stepStart;
     }
     this.stepStart = now;

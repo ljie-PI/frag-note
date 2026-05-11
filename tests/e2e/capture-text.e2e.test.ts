@@ -20,7 +20,7 @@ describe('E2E: Fragment Capture — Text', () => {
   });
 
   afterAll(() => {
-    logger.saveReport('tests/e2e/reports/capture-text.json');
+    logger?.saveReport('tests/e2e/reports/capture-text.json');
   });
 
   it('captures a text fragment via Edge Function', async () => {

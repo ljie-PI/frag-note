@@ -1,10 +1,11 @@
+import { randomUUID } from 'node:crypto';
 import { TEST_ENV } from '../setup/test-env.ts';
 
 export async function createTestUser(
   email?: string,
   password?: string,
 ) {
-  const testEmail = email ?? `test-${Date.now()}@e2e.local`;
+  const testEmail = email ?? `test-${randomUUID()}@e2e.local`;
   const testPassword = password ?? 'test-password-123!';
 
   // Sign up via Supabase Auth REST API
