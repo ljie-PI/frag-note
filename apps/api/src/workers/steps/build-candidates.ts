@@ -7,7 +7,7 @@ import { buildDerivedObjectRow, mapDerivedObjectRow } from '../../runtime/supaba
 export const buildCandidatesStep: PipelineStep = {
   name: 'build-candidates',
   async execute(ctx) {
-    const nextFragments = [...ctx.existingReady, { ...ctx.fragment, status: 'ready' as const }];
+    const nextFragments = [...ctx.existingReady, ctx.fragment];
     ctx.candidateResults = [
       ...buildTopicCandidates(nextFragments),
       ...buildProjectCandidates(nextFragments),
