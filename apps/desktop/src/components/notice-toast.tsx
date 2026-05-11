@@ -107,6 +107,8 @@ export function ShortcutNoticeToast({
   notice: ShortcutNotice | null;
   onDismiss: () => void;
 }) {
+  const { t } = useTranslation();
+
   if (!notice) {
     return null;
   }
@@ -130,7 +132,7 @@ export function ShortcutNoticeToast({
           {notice.actionLabel}
         </button>
         <button
-          aria-label="Close"
+          aria-label={t('notice.closeNotice')}
           className="absolute right-3 top-3 rounded-full px-2 py-0.5 text-sm text-stone-400 transition-colors hover:bg-stone-100 hover:text-stone-600"
           onClick={onDismiss}
           type="button"
