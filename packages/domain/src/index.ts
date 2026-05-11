@@ -7,3 +7,4 @@ export * from './models/fragment.ts';
 export * from './models/processing-job.ts';
 export * from './models/primitives.ts';
 export * from './models/relation.ts';
+export * from './result.ts';
