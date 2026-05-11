@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
+import { useTranslation } from '../i18n/LocaleContext.tsx';
+import zhCN from '../i18n/zh-CN.json';
 
 export type ShortcutNoticeEventName =
   | 'accessibility-permission-needed'
@@ -20,50 +22,80 @@ type ListenImpl = (
 ) => Promise<Unlisten>;
 type InvokeImpl = (commandName: string) => Promise<unknown>;
 
-export const SHORTCUT_NOTICE_COPY: Record<ShortcutNoticeEventName, ShortcutNotice> = {
+// Default translation function using zh-CN as fallback
+function defaultT(key: string): string {
+  const keys = key.split('.');
+  let current: unknown = zhCN;
+  for (const k of keys) {
+    if (current === null || current === undefined || typeof current !== 'object') return key;
+    current = (current as Record<string, unknown>)[k];
+  }
+  return typeof current === 'string' ? current : key;
+}
+
+// Translation keys for each notice event
+const NOTICE_KEYS: Record<ShortcutNoticeEventName, { title: string; message: string; actionLabel: string }> = {
   'accessibility-permission-needed': {
-    eventName: 'accessibility-permission-needed',
-    title: '需要辅助功能权限',
-    message: '请允许碎记控制你的电脑，以便通过 Alt+Shift+C 抓取选中文字。',
-    actionLabel: '去设置',
+    title: 'notice.accessibilityTitle',
+    message: 'notice.accessibilityMessage',
+    actionLabel: 'notice.accessibilityAction',
   },
   'wayland-clipboard-fallback': {
-    eventName: 'wayland-clipboard-fallback',
-    title: 'Wayland 限制',
-    message: '请先按 Ctrl+C 复制后再使用 Alt+Shift+C。',
-    actionLabel: '知道了',
+    title: 'notice.waylandTitle',
+    message: 'notice.waylandMessage',
+    actionLabel: 'notice.waylandAction',
   },
 };
 
+export function createShortcutNoticeCopy(t: (key: string) => string = defaultT): Record<ShortcutNoticeEventName, ShortcutNotice> {
+  return {
+    'accessibility-permission-needed': {
+      eventName: 'accessibility-permission-needed',
+      title: t(NOTICE_KEYS['accessibility-permission-needed'].title),
+      message: t(NOTICE_KEYS['accessibility-permission-needed'].message),
+      actionLabel: t(NOTICE_KEYS['accessibility-permission-needed'].actionLabel),
+    },
+    'wayland-clipboard-fallback': {
+      eventName: 'wayland-clipboard-fallback',
+      title: t(NOTICE_KEYS['wayland-clipboard-fallback'].title),
+      message: t(NOTICE_KEYS['wayland-clipboard-fallback'].message),
+      actionLabel: t(NOTICE_KEYS['wayland-clipboard-fallback'].actionLabel),
+    },
+  };
+}
+
 export const SHORTCUT_NOTICE_EVENT_NAMES = Object.keys(
-  SHORTCUT_NOTICE_COPY,
+  NOTICE_KEYS,
 ) as ShortcutNoticeEventName[];
 
 export function consumeShortcutNoticeEvent(
   eventName: ShortcutNoticeEventName,
   shownEvents: Set<string>,
+  t: (key: string) => string = defaultT,
 ) {
   if (shownEvents.has(eventName)) {
     return null;
   }
 
   shownEvents.add(eventName);
-  return SHORTCUT_NOTICE_COPY[eventName];
+  return createShortcutNoticeCopy(t)[eventName];
 }
 
 export async function subscribeShortcutNoticeEvents({
   shownEvents,
   setNotice,
+  t = defaultT,
   listenImpl = listen as ListenImpl,
 }: {
   shownEvents: Set<string>;
   setNotice: (notice: ShortcutNotice) => void;
+  t?: (key: string) => string;
   listenImpl?: ListenImpl;
 }) {
   const unlisteners = await Promise.all(
     SHORTCUT_NOTICE_EVENT_NAMES.map((eventName) =>
       listenImpl(eventName, () => {
-        const notice = consumeShortcutNoticeEvent(eventName, shownEvents);
+        const notice = consumeShortcutNoticeEvent(eventName, shownEvents, t);
         if (notice) {
           setNotice(notice);
         }
@@ -122,7 +154,7 @@ export function ShortcutNoticeToast({
           {notice.actionLabel}
         </button>
         <button
-          aria-label="关闭通知"
+          aria-label="Close"
           className="absolute right-3 top-3 rounded-full px-2 py-0.5 text-sm text-stone-400 transition-colors hover:bg-stone-100 hover:text-stone-600"
           onClick={onDismiss}
           type="button"
@@ -135,6 +167,7 @@ export function ShortcutNoticeToast({
 }
 
 export function ShortcutNoticeToaster() {
+  const { t } = useTranslation();
   const [notice, setNotice] = useState<ShortcutNotice | null>(null);
   const shownEvents = useRef(new Set<string>());
 
@@ -145,6 +178,7 @@ export function ShortcutNoticeToaster() {
     void subscribeShortcutNoticeEvents({
       shownEvents: shownEvents.current,
       setNotice,
+      t,
     }).then((unlisten) => {
       if (disposed) {
         unlisten();
@@ -157,7 +191,7 @@ export function ShortcutNoticeToaster() {
       disposed = true;
       cleanup?.();
     };
-  }, []);
+  }, [t]);
 
   return (
     <ShortcutNoticeToast

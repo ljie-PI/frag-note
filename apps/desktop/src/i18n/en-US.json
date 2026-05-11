@@ -1,0 +1,89 @@
+{
+  "app": {
+    "name": "FragNote",
+    "tagline": "AI-powered fragment notes"
+  },
+  "nav": {
+    "capture": "Capture",
+    "fragments": "Fragments",
+    "organization": "Organize",
+    "search": "Search"
+  },
+  "auth": {
+    "title": "Sign In",
+    "email": "Email",
+    "password": "Password",
+    "signIn": "Sign In",
+    "signUp": "Sign Up",
+    "signOut": "Sign Out"
+  },
+  "capture": {
+    "placeholder": "Write something...",
+    "greeting": "What would you like to note down?",
+    "save": "Save",
+    "addFile": "Add file",
+    "screenshot": "Screenshot",
+    "recordingStop": "Stop recording",
+    "recordingStart": "Record",
+    "preparingScreenshot": "Preparing screenshot..."
+  },
+  "status": {
+    "queued_upload": "Queued",
+    "uploading": "Uploading",
+    "processing": "Processing",
+    "complete": "Complete",
+    "failed": "Failed"
+  },
+  "fragment": {
+    "recentTitle": "Recent Fragments",
+    "emptyTitle": "No fragments yet",
+    "emptyDescription": "Record your first note and it will appear here.",
+    "untitled": "Untitled fragment",
+    "statusLabel": "Status: ",
+    "rawTextLabel": "Raw: ",
+    "noRawText": "No raw text",
+    "derivedLabel": "Derived: ",
+    "viewDetail": "View details",
+    "detailTitle": "Fragment Details",
+    "detailPlaceholder": "Select a fragment to view its raw content and derived data.",
+    "rawContent": "Raw Content",
+    "derivedArtifacts": "Derived Artifacts",
+    "relatedFragments": "Related Fragments"
+  },
+  "organization": {
+    "title": "Organize",
+    "emptyTitle": "No suggestions",
+    "emptyDescription": "As you add more notes, organization suggestions will appear here.",
+    "viewDetail": "View details",
+    "derivedDetailTitle": "Derived Object Details",
+    "derivedDetailPlaceholder": "Select a suggestion to view supporting evidence.",
+    "statusLabel": "Status: ",
+    "supportingFragments": "Supporting fragments: ",
+    "updateSuggestion": "Update Suggestion",
+    "ruleVersion": "Rule version: ",
+    "confirm": "Confirm",
+    "dismiss": "Dismiss",
+    "postpone": "Later"
+  },
+  "search": {
+    "title": "Search",
+    "inputLabel": "Search content",
+    "submit": "Search",
+    "answerTitle": "Answer",
+    "noAnswer": "No answer yet",
+    "citationTitle": "Citations",
+    "saveAsFragment": "Save as fragment"
+  },
+  "notice": {
+    "accessibilityTitle": "Accessibility Permission Needed",
+    "accessibilityMessage": "Please allow FragNote to control your computer so Alt+Shift+C can grab selected text.",
+    "accessibilityAction": "Open Settings",
+    "waylandTitle": "Wayland Limitation",
+    "waylandMessage": "Please press Ctrl+C to copy first, then use Alt+Shift+C.",
+    "waylandAction": "Got it",
+    "closeNotice": "Close notification"
+  },
+  "common": {
+    "retry": "Retry"
+  }
+}

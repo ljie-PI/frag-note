@@ -1,6 +1,7 @@
 import { useRef, type ReactNode } from 'react';
 import { Paperclip } from 'lucide-react';
 import type { LocalAssetPointer } from '../storage/local-assets.ts';
+import { useTranslation } from '../../i18n/LocaleContext.tsx';
 
 export function FileDropzone({
   assets,
@@ -64,11 +65,13 @@ export function FileDropzone({
 }
 
 FileDropzone.PickerButton = function PickerButton({ onClick }: { onClick: () => void }) {
+  const { t } = useTranslation();
+
   return (
     <button
       className="inline-flex items-center justify-center w-9 h-9 rounded-full text-slate-400 hover:text-purple-600 hover:bg-purple-50 transition-colors"
       onClick={onClick}
-      title="添加文件"
+      title={t('capture.addFile')}
       type="button"
     >
       <Paperclip size={18} />

@@ -10,6 +10,7 @@ import {
   persistLocalAssetPointer,
   type LocalAssetPointer,
 } from '../storage/local-assets.ts';
+import { useTranslation } from '../../i18n/LocaleContext.tsx';
 
 export type CapturePaletteRef = {
   appendText: (text: string) => void;
@@ -32,6 +33,7 @@ type CapturePaletteProps = {
 
 export const CapturePalette = forwardRef<CapturePaletteRef, CapturePaletteProps>(
   function CapturePalette({ store, syncService, onSaved, showGreeting = true, cardClassName, compact = false, fillHeight = false }, ref) {
+    const { t } = useTranslation();
     const [rawText, setRawText] = useState('');
     const [busy, setBusy] = useState(false);
     const [assets, setAssets] = useState<LocalAssetPointer[]>([]);
@@ -122,10 +124,10 @@ export const CapturePalette = forwardRef<CapturePaletteRef, CapturePaletteProps>
         >
           <textarea
             ref={textareaRef}
-            aria-label="随便写点什么..."
+            aria-label={t('capture.placeholder')}
             className={textareaClass}
             style={textareaStyle}
-            placeholder="随便写点什么..."
+            placeholder={t('capture.placeholder')}
             value={rawText}
             onChange={(event) => setRawText(event.target.value)}
           />
@@ -160,7 +162,7 @@ export const CapturePalette = forwardRef<CapturePaletteRef, CapturePaletteProps>
               type="submit"
             >
               <Send size={16} />
-              保存
+              {t('capture.save')}
             </button>
           </div>
         </FileDropzone>
@@ -171,7 +173,7 @@ export const CapturePalette = forwardRef<CapturePaletteRef, CapturePaletteProps>
 
     return (
       <div className="flex flex-col items-center justify-center h-full">
-        <h2 className="text-2xl font-semibold text-slate-700 mb-6">有什么想记下的？</h2>
+        <h2 className="text-2xl font-semibold text-slate-700 mb-6">{t('capture.greeting')}</h2>
         {form}
       </div>
     );

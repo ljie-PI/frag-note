@@ -21,6 +21,7 @@ import { SearchPage } from './routes/search.tsx';
 import { AuthGate } from './routes/auth-gate.tsx';
 import { ShortcutNoticeToaster } from '../components/notice-toast.tsx';
 import { TitleBar } from './TitleBar.tsx';
+import { useTranslation } from '../i18n/LocaleContext.tsx';
 
 type AppProps = {
   apiClient?: ExtendedDesktopApiClient;
@@ -35,14 +36,10 @@ const NAV_ICONS: Record<AppView, React.ReactNode> = {
   search: <Search size={18} />,
 };
 
-const NAV_ITEMS: { key: AppView; label: string }[] = [
-  { key: 'capture', label: '随记' },
-  { key: 'fragments', label: '碎片' },
-  { key: 'organization', label: '整理' },
-  { key: 'search', label: '搜索' },
-];
+const NAV_KEYS: AppView[] = ['capture', 'fragments', 'organization', 'search'];
 
 export function App({ apiClient: providedApiClient }: AppProps = {}) {
+  const { t } = useTranslation();
   const adapter = useMemo(() => createDesktopAdapter(), []);
   const store = useMemo(() => createCaptureStore({ adapter }), [adapter]);
   const authClient = useMemo(
@@ -183,7 +180,7 @@ export function App({ apiClient: providedApiClient }: AppProps = {}) {
         <div className="h-screen rounded-xl overflow-hidden bg-gradient-to-br from-purple-50 via-white to-slate-50 flex flex-col">
           <TitleBar />
           <main className="flex-1 flex items-center justify-center">
-            <h1 className="text-2xl font-bold text-slate-400">碎记</h1>
+            <h1 className="text-2xl font-bold text-slate-400">{t('app.name')}</h1>
           </main>
           <ShortcutNoticeToaster />
         </div>
@@ -197,8 +194,8 @@ export function App({ apiClient: providedApiClient }: AppProps = {}) {
           <div className="w-full max-w-sm p-6">
             <div className="text-center mb-8">
               <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-purple-600 text-white mb-4"><NotebookPen size={28} /></div>
-              <h1 className="text-2xl font-bold text-slate-900">碎记</h1>
-              <p className="text-sm text-slate-500 mt-1">AI 驱动的碎片笔记</p>
+              <h1 className="text-2xl font-bold text-slate-900">{t('app.name')}</h1>
+              <p className="text-sm text-slate-500 mt-1">{t('app.tagline')}</p>
             </div>
             <AuthGate
               authClient={authClient}
@@ -222,27 +219,27 @@ export function App({ apiClient: providedApiClient }: AppProps = {}) {
         <div className="px-5 py-5 border-b border-stone-200/60">
           <h1 className="text-lg font-bold text-stone-800 flex items-center gap-2">
             <span className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-purple-600 text-white"><NotebookPen size={16} /></span>
-            碎记
+            {t('app.name')}
           </h1>
         </div>
         <nav className="flex-1 px-3 py-4 space-y-1">
-          {NAV_ITEMS.map((item) => (
+          {NAV_KEYS.map((key) => (
             <button
-              key={item.key}
+              key={key}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                activeView === item.key
+                activeView === key
                   ? 'bg-purple-100/70 text-purple-800'
                   : 'text-stone-600 hover:bg-stone-200/60 hover:text-stone-800'
               }`}
-              onClick={() => setActiveView(item.key)}
+              onClick={() => setActiveView(key)}
               type="button"
             >
-              {NAV_ICONS[item.key]}
-              {item.label}
-              {item.key === 'fragments' && records.length > 0 ? (
+              {NAV_ICONS[key]}
+              {t(`nav.${key}`)}
+              {key === 'fragments' && records.length > 0 ? (
                 <span className="ml-auto text-xs bg-stone-300/60 text-stone-600 rounded-full px-2 py-0.5">{records.length}</span>
               ) : null}
-              {item.key === 'organization' && candidates.length > 0 ? (
+              {key === 'organization' && candidates.length > 0 ? (
                 <span className="ml-auto text-xs bg-purple-200/60 text-purple-700 rounded-full px-2 py-0.5">{candidates.length}</span>
               ) : null}
             </button>
@@ -261,7 +258,7 @@ export function App({ apiClient: providedApiClient }: AppProps = {}) {
               type="button"
             >
               <LogOut size={18} />
-              退出登录
+              {t('auth.signOut')}
             </button>
           </div>
         ) : null}

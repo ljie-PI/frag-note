@@ -1,0 +1,89 @@
+{
+  "app": {
+    "name": "碎记",
+    "tagline": "AI 驱动的碎片笔记"
+  },
+  "nav": {
+    "capture": "随记",
+    "fragments": "碎片",
+    "organization": "整理",
+    "search": "搜索"
+  },
+  "auth": {
+    "title": "登录",
+    "email": "邮箱",
+    "password": "密码",
+    "signIn": "登录",
+    "signUp": "注册",
+    "signOut": "退出登录"
+  },
+  "capture": {
+    "placeholder": "随便写点什么...",
+    "greeting": "有什么想记下的？",
+    "save": "保存",
+    "addFile": "添加文件",
+    "screenshot": "截图",
+    "recordingStop": "停止录音",
+    "recordingStart": "录音",
+    "preparingScreenshot": "正在准备截图…"
+  },
+  "status": {
+    "queued_upload": "等待上传",
+    "uploading": "上传中",
+    "processing": "处理中",
+    "complete": "已完成",
+    "failed": "失败"
+  },
+  "fragment": {
+    "recentTitle": "最近碎片",
+    "emptyTitle": "暂无碎片",
+    "emptyDescription": "记录你的第一条笔记，它会出现在这里。",
+    "untitled": "无标题碎片",
+    "statusLabel": "状态：",
+    "rawTextLabel": "原文：",
+    "noRawText": "无原文",
+    "derivedLabel": "衍生：",
+    "viewDetail": "查看详情",
+    "detailTitle": "碎片详情",
+    "detailPlaceholder": "选择一个碎片来查看原始内容和衍生数据。",
+    "rawContent": "原始内容",
+    "derivedArtifacts": "衍生产物",
+    "relatedFragments": "关联碎片"
+  },
+  "organization": {
+    "title": "整理",
+    "emptyTitle": "暂无建议",
+    "emptyDescription": "随着你添加更多笔记，整理建议会出现在这里。",
+    "viewDetail": "查看详情",
+    "derivedDetailTitle": "衍生对象详情",
+    "derivedDetailPlaceholder": "选择一个整理建议来查看支撑证据。",
+    "statusLabel": "状态：",
+    "supportingFragments": "关联碎片：",
+    "updateSuggestion": "更新建议",
+    "ruleVersion": "规则版本：",
+    "confirm": "确认",
+    "dismiss": "忽略",
+    "postpone": "稍后"
+  },
+  "search": {
+    "title": "搜索",
+    "inputLabel": "搜索内容",
+    "submit": "搜索",
+    "answerTitle": "回答",
+    "noAnswer": "暂无回答",
+    "citationTitle": "引用来源",
+    "saveAsFragment": "保存为碎片"
+  },
+  "notice": {
+    "accessibilityTitle": "需要辅助功能权限",
+    "accessibilityMessage": "请允许碎记控制你的电脑，以便通过 Alt+Shift+C 抓取选中文字。",
+    "accessibilityAction": "去设置",
+    "waylandTitle": "Wayland 限制",
+    "waylandMessage": "请先按 Ctrl+C 复制后再使用 Alt+Shift+C。",
+    "waylandAction": "知道了",
+    "closeNotice": "关闭通知"
+  },
+  "common": {
+    "retry": "重试"
+  }
+}
