@@ -14,7 +14,7 @@ describe('E2E: Fragment List & Detail', () => {
     await api.createDeviceSession();
   });
 
-  afterAll(() => { logger.saveReport('tests/e2e/reports/fragments.json'); });
+  afterAll(() => { logger?.saveReport('tests/e2e/reports/fragments.json'); });
 
   it('returns empty list for new user', async () => {
     logger.step('list fragments for fresh user');

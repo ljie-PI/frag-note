@@ -21,7 +21,7 @@ describe('E2E: Organization (Derived Objects Review)', () => {
     await service.insertUser(userId);
   });
 
-  afterAll(() => { logger.saveReport('tests/e2e/reports/organization.json'); });
+  afterAll(() => { logger?.saveReport('tests/e2e/reports/organization.json'); });
 
   it('returns no candidates for new user', async () => {
     logger.step('check candidates for fresh user');

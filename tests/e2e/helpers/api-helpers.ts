@@ -44,7 +44,7 @@ export function createApiClient(accessToken: string) {
         `${TEST_ENV.SUPABASE_URL}/functions/v1/review-derived-object`,
         { method: 'POST', headers, body: JSON.stringify({ objectId, action }) },
       );
-      return { status: res.status, data: await res.json() };
+      return { status: res.status, data: await safeJson(res) as Record<string, unknown> };
     },
 
     async getFragment(fragmentId: string) {
@@ -85,7 +85,7 @@ export function createApiClient(accessToken: string) {
         `${TEST_ENV.SUPABASE_URL}/rest/v1/derived_objects?object_id=eq.${objectId}&select=*`,
         { headers },
       );
-      const data = await res.json();
+      const data = await safeJson(res) as Record<string, unknown>[];
       return data[0] ?? null;
     },
 
@@ -111,7 +111,7 @@ export function createApiClient(accessToken: string) {
 export function createServiceClient() {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
-    apikey: TEST_ENV.SUPABASE_ANON_KEY,
+    apikey: TEST_ENV.SUPABASE_SERVICE_ROLE_KEY,
     Authorization: `Bearer ${TEST_ENV.SUPABASE_SERVICE_ROLE_KEY}`,
   };
 

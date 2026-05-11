@@ -8,7 +8,7 @@ describe('E2E: Authentication Flow', () => {
   let logger: TestLogger;
 
   beforeAll(() => { logger = new TestLogger(); });
-  afterAll(() => { logger.saveReport('tests/e2e/reports/auth.json'); });
+  afterAll(() => { logger?.saveReport('tests/e2e/reports/auth.json'); });
 
   it('registers a new user and creates device session', async () => {
     logger.step('register new user');
