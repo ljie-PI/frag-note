@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, mock } from 'bun:test';
 import { renderToStaticMarkup } from 'react-dom/server';
 import zhCN from '../../apps/desktop/src/i18n/zh-CN.json';
+import { installTauriMocks } from './support/tauri-mocks.ts';
 
 function getNestedValue(obj: Record<string, unknown>, path: string): string {
   const keys = path.split('.');
@@ -19,30 +20,29 @@ type Listener = (event: { event: string; payload?: unknown }) => void;
 const listeners = new Map<string, Listener[]>();
 const invokedCommands: string[] = [];
 
-mock.module('@tauri-apps/api/event', () => ({
-  listen: mock(async (eventName: string, listener: Listener) => {
-    const eventListeners = listeners.get(eventName) ?? [];
-    eventListeners.push(listener);
-    listeners.set(eventName, eventListeners);
+installTauriMocks({
+  invoke: mock(async (commandName: unknown) => {
+    invokedCommands.push(String(commandName));
+  }),
+  listen: mock(async (eventName: unknown, listener: unknown) => {
+    const name = String(eventName);
+    const fn = listener as Listener;
+    const eventListeners = listeners.get(name) ?? [];
+    eventListeners.push(fn);
+    listeners.set(name, eventListeners);
 
     return () => {
-      const remaining = (listeners.get(eventName) ?? []).filter(
-        (candidate) => candidate !== listener,
+      const remaining = (listeners.get(name) ?? []).filter(
+        (candidate) => candidate !== fn,
       );
       if (remaining.length === 0) {
-        listeners.delete(eventName);
+        listeners.delete(name);
       } else {
-        listeners.set(eventName, remaining);
+        listeners.set(name, remaining);
       }
     };
   }),
-}));
-
-mock.module('@tauri-apps/api/core', () => ({
-  invoke: mock(async (commandName: string) => {
-    invokedCommands.push(commandName);
-  }),
-}));
+});
 
 async function loadToastModule() {
   return import('../../apps/desktop/src/components/notice-toast.tsx');

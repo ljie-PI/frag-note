@@ -1,4 +1,5 @@
-import { beforeEach, describe, expect, it, mock } from 'bun:test';
+import { beforeEach, describe, expect, it } from 'bun:test';
+import { installTauriMocks } from './support/tauri-mocks.ts';
 
 let invokedCommands: string[] = [];
 let showInvoked: Promise<void>;
@@ -11,23 +12,17 @@ beforeEach(() => {
   });
 });
 
-mock.module('@tauri-apps/api/core', () => ({
-  invoke: async (command: string) => {
-    invokedCommands.push(command);
-    if (command === 'show_screenshot_overlay') {
+installTauriMocks({
+  invoke: async (command: unknown) => {
+    const cmd = String(command);
+    invokedCommands.push(cmd);
+    if (cmd === 'show_screenshot_overlay') {
       resolveShowInvoked();
     }
     return null;
   },
-}));
-
-mock.module('@tauri-apps/api/event', () => ({
-  listen: async () => () => {},
-}));
-
-mock.module('@tauri-apps/api/window', () => ({
   getCurrentWindow: () => ({ label: 'main' }),
-}));
+});
 
 describe('requestRegionScreenshotWithTimeout', () => {
   it('hides the overlay before resolving a timed-out request', async () => {
