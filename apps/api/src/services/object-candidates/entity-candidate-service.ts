@@ -1,7 +1,12 @@
 import { randomUUID } from 'node:crypto';
-import type { DerivedObject, Fragment } from '@frag-note/domain';
+import type { Fragment } from '@frag-note/domain';
 
-export function buildEntityCandidates(fragments: Fragment[]): DerivedObject[] {
+export type CandidateResult = {
+  object: DerivedObject;
+  fragmentIds: string[];
+};
+
+export function buildEntityCandidates(fragments: Fragment[]): CandidateResult[] {
   const entityMap = new Map<string, Fragment[]>();
 
   for (const fragment of fragments) {
@@ -19,24 +24,26 @@ export function buildEntityCandidates(fragments: Fragment[]): DerivedObject[] {
   return [...entityMap.entries()]
     .filter(([, cluster]) => cluster.length >= 2)
     .map(([entity, cluster]) => ({
-      objectId: randomUUID(),
-      objectType: 'entity' as const,
-      status: 'candidate' as const,
-      title: entity,
-      summary: `Fragments repeatedly mention ${entity}.`,
-      keyEntities: [entity],
-      supportingFragmentIds: cluster.map((fragment) => fragment.fragmentId),
-      citations: cluster.slice(0, 3).map((fragment) => ({
-        fragmentId: fragment.fragmentId,
-        locator: {
-          kind: 'text_span' as const,
-          value: '0:42',
-        },
-        supportPath: 'direct' as const,
-      })),
-      relationEdges: [],
-      ruleVersion: 'heuristic-v1',
-      createdAt: now,
-      updatedAt: now,
+      object: {
+        objectId: randomUUID(),
+        objectType: 'entity' as const,
+        status: 'candidate' as const,
+        title: entity,
+        summary: `Fragments repeatedly mention ${entity}.`,
+        keyEntities: [entity],
+        citations: cluster.slice(0, 3).map((fragment) => ({
+          fragmentId: fragment.fragmentId,
+          locator: {
+            kind: 'text_span' as const,
+            value: '0:42',
+          },
+          supportPath: 'direct' as const,
+        })),
+        relationEdges: [],
+        ruleVersion: 'heuristic-v1',
+        createdAt: now,
+        updatedAt: now,
+      },
+      fragmentIds: cluster.map((fragment) => fragment.fragmentId),
     }));
 }

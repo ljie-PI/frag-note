@@ -193,7 +193,7 @@ export function buildRelationRow(userId: string, relation: Relation): JsonRecord
   };
 }
 
-export function buildDerivedObjectRow(userId: string, object: DerivedObject): JsonRecord {
+export function buildDerivedObjectRow(userId: string, object: DerivedObject, supportingFragmentCount = 0): JsonRecord {
   return {
     object_id: object.objectId,
     user_id: userId,
@@ -203,8 +203,7 @@ export function buildDerivedObjectRow(userId: string, object: DerivedObject): Js
     summary: object.summary,
     key_entities: object.keyEntities,
     rule_version: object.ruleVersion,
-    supporting_fragment_count: object.supportingFragmentIds.length,
-    supporting_fragment_ids: object.supportingFragmentIds,
+    supporting_fragment_count: supportingFragmentCount,
     citations: object.citations,
     relation_edges: object.relationEdges,
     created_at: object.createdAt,
@@ -321,8 +320,6 @@ export function mapDerivedObjectRow(row: Record<string, unknown>): DerivedObject
     title: String(row.title),
     summary: String(row.summary),
     keyEntities: ((row.key_entities as string[]) ?? []) as string[],
-    supportingFragmentIds:
-      ((row.supporting_fragment_ids as string[]) ?? []) as string[],
     citations: ((row.citations as Citation[]) ?? []) as Citation[],
     relationEdges: ((row.relation_edges as string[]) ?? []) as string[],
     ruleVersion: String(row.rule_version),

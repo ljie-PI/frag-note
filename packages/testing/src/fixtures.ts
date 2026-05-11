@@ -98,10 +98,6 @@ export const seedCandidate = {
   status: 'candidate',
   summary: 'Research notes and artifacts related to OCR workflows.',
   keyEntities: ['OCR', 'screenshots', 'transcripts'],
-  supportingFragmentIds: [
-    '11111111-1111-4111-8111-111111111111',
-    '11111111-1111-4111-8111-111111111113',
-  ],
   citations: [
     {
       fragmentId: '11111111-1111-4111-8111-111111111111',

@@ -1,0 +1,15 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.0.0/schema.json",
+  "organizeImports": {
+    "enabled": true
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "recommended": true
+    }
+  },
+  "files": {
+    "include": ["packages/**/*.ts", "apps/api/src/**/*.ts", "apps/desktop/src/**/*.ts", "apps/desktop/src/**/*.tsx", "tests/**/*.ts"]
+  }
+}

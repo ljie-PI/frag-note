@@ -32,7 +32,8 @@ describe('domain models', () => {
     const answer = answerArtifactSchema.parse(seedAnswer);
 
     expect(fragments).toHaveLength(3);
-    expect(candidate.supportingFragmentIds).toContain(
+    expect(candidate.citations).toHaveLength(1);
+    expect(candidate.citations[0].fragmentId).toBe(
       seedFragments.topicCluster[0].fragmentId,
     );
     expect(asset.storagePath.bucket).toBe('captures');

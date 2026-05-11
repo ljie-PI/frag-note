@@ -268,17 +268,18 @@ function recomputeDerivedObjects(state: AppState) {
       fragment.originKind === 'user_capture',
   );
 
-  const candidates = runOrganizationWorker(state);
-  for (const candidate of candidates) {
+  const results = runOrganizationWorker(state);
+  for (const result of results) {
     const existing = [...state.derivedObjects.values()].find(
-      (object) => object.title === candidate.title && object.objectType === candidate.objectType,
+      (object) => object.title === result.object.title && object.objectType === result.object.objectType,
     );
 
     if (!existing) {
       continue;
     }
 
-    const suggestions = buildUpdateSuggestions(existing, readyFragments);
+    const existingFragmentIds = state.derivedObjectFragments.get(existing.objectId) ?? new Set();
+    const suggestions = buildUpdateSuggestions(existing, readyFragments, existingFragmentIds);
     if (suggestions.length === 0) {
       continue;
     }
@@ -286,13 +287,14 @@ function recomputeDerivedObjects(state: AppState) {
     state.derivedObjects.set(existing.objectId, {
       ...existing,
       summary: suggestions[0]!.suggestedSummary,
-      supportingFragmentIds: [
-        ...new Set([
-          ...existing.supportingFragmentIds,
-          ...suggestions[0]!.suggestedSupportingFragmentIds,
-        ]),
-      ],
       updatedAt: new Date().toISOString(),
     });
+
+    // Add new fragment IDs to the junction
+    const updatedFragments = new Set(existingFragmentIds);
+    for (const id of suggestions[0]!.suggestedSupportingFragmentIds) {
+      updatedFragments.add(id);
+    }
+    state.derivedObjectFragments.set(existing.objectId, updatedFragments);
   }
 }

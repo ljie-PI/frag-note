@@ -11,9 +11,14 @@ export function expandDerivedObjects(
     ...relations.map((relation) => relation.targetObjectId),
   ]);
 
-  return [...state.derivedObjects.values()].filter(
-    (candidate) =>
-      candidate.status === 'confirmed' &&
-      candidate.supportingFragmentIds.some((fragmentId) => fragmentIds.has(fragmentId)),
-  );
+  return [...state.derivedObjects.values()].filter((candidate) => {
+    if (candidate.status !== 'confirmed') {
+      return false;
+    }
+    const objectFragments = state.derivedObjectFragments.get(candidate.objectId);
+    if (!objectFragments) {
+      return false;
+    }
+    return [...objectFragments].some((fragmentId) => fragmentIds.has(fragmentId));
+  });
 }

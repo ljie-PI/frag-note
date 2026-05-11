@@ -21,8 +21,8 @@ export function DerivedObjectDetailPage({
       <p className="text-sm text-slate-500 mb-2">状态：{candidate.status}</p>
       <p className="text-sm text-slate-600 mb-4">{candidate.summary}</p>
       <ul className="list-disc list-inside text-sm text-slate-500 mb-4">
-        {candidate.supportingFragmentIds.map((fragmentId) => (
-          <li key={fragmentId}>{fragmentId}</li>
+        {candidate.citations.map((citation) => (
+          <li key={citation.fragmentId}>{citation.fragmentId}</li>
         ))}
       </ul>
       <UpdateSuggestionPanel candidate={candidate} />

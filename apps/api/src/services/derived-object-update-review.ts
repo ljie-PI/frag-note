@@ -8,9 +8,10 @@ export function reviewDerivedObjectUpdates(state: AppState, objectId: string) {
     return [];
   }
 
+  const existingFragmentIds = state.derivedObjectFragments.get(objectId) ?? new Set();
   const fragments = [...state.fragments.values()].filter((fragment) =>
-    object.supportingFragmentIds.includes(fragment.fragmentId),
+    existingFragmentIds.has(fragment.fragmentId),
   );
 
-  return buildUpdateSuggestions(object, fragments);
+  return buildUpdateSuggestions(object, fragments, existingFragmentIds);
 }

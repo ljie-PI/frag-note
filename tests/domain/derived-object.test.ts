@@ -2,7 +2,7 @@ import { describe, expect, it } from 'bun:test';
 import { derivedObjectSchema } from '../../packages/domain/src/index.ts';
 
 describe('derivedObjectSchema', () => {
-  it('tracks supporting fragments, citations, and relation edges', () => {
+  it('tracks citations and relation edges', () => {
     const parsed = derivedObjectSchema.parse({
       objectId: '22222222-2222-4222-8222-222222222222',
       objectType: 'topic',
@@ -10,7 +10,6 @@ describe('derivedObjectSchema', () => {
       title: 'OCR research',
       summary: 'Research notes about OCR tooling.',
       keyEntities: ['OCR', 'screenshots'],
-      supportingFragmentIds: ['11111111-1111-1111-8111-111111111111'],
       citations: [
         {
           fragmentId: '11111111-1111-1111-8111-111111111111',
@@ -28,6 +27,6 @@ describe('derivedObjectSchema', () => {
     });
 
     expect(parsed.status).toBe('candidate');
-    expect(parsed.supportingFragmentIds).toHaveLength(1);
+    expect(parsed.citations).toHaveLength(1);
   });
 });

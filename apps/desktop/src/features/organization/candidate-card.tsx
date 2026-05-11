@@ -16,7 +16,7 @@ export function CandidateCard({
     <article>
       <h3 className="text-sm font-semibold text-slate-900">{candidate.title}</h3>
       <p className="text-sm text-slate-600 mt-1">{candidate.summary}</p>
-      <p className="text-xs text-slate-400 mt-1">关联碎片：{candidate.supportingFragmentIds.length}</p>
+      <p className="text-xs text-slate-400 mt-1">关联碎片：{candidate.citations.length}</p>
       <ReviewActions
         onConfirm={onConfirm}
         onDismiss={onDismiss}
