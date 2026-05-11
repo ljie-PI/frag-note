@@ -8,3 +8,6 @@ apps/desktop/src-tauri/target/
 # Supabase local
 supabase/.branches/
 supabase/.temp/
+
+# E2E test reports
+tests/e2e/reports/
