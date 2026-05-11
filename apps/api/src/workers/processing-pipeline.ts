@@ -35,6 +35,11 @@ export async function runPipeline(
   steps: PipelineStep[],
 ): Promise<void> {
   for (const step of steps) {
-    await step.execute(ctx);
+    try {
+      await step.execute(ctx);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      throw new Error(`Pipeline step "${step.name}" failed (job=${ctx.jobId}, fragment=${ctx.fragment.fragmentId}): ${message}`);
+    }
   }
 }

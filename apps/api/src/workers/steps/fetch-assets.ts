@@ -20,6 +20,10 @@ export const fetchAssetsStep: PipelineStep = {
           .from(mapped.storagePath.bucket)
           .download(mapped.storagePath.key);
 
+        if (download.error) {
+          throw new Error(`Failed to download asset ${mapped.storagePath.key}: ${download.error.message}`);
+        }
+
         return {
           fileName:
             mapped.fileNameOptional ??

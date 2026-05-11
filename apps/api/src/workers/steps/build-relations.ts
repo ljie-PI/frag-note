@@ -1,7 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import type { Fragment, Relation } from '@frag-note/domain';
 import type { PipelineStep } from '../processing-pipeline.js';
-import { buildDerivedArtifactsForFragmentAsync } from '../../services/derived-artifacts.js';
 import { buildRelationRow, mapFragmentRow } from '../../runtime/supabase-records.js';
 import { extractFragmentSearchText } from '../../services/fragment-content.js';
 import { tokenizeText } from '../../services/text-utils.js';
