@@ -70,12 +70,12 @@ export async function createTauriDriver(appBinaryPath: string) {
     },
 
     async captureScreenshot(name: string) {
-      const { writeFileSync, mkdirSync } = await import('fs');
-      const { dirname } = await import('path');
+      const { writeFileSync, mkdirSync } = await import('node:fs');
+      const { dirname } = await import('node:path');
       const screenshot = await driver.takeScreenshot();
-      const path = `tests/e2e/reports/screenshots/${name}.png`;
-      mkdirSync(dirname(path), { recursive: true });
-      writeFileSync(path, screenshot, 'base64');
+      const screenshotPath = `tests/e2e/reports/screenshots/${name}.png`;
+      mkdirSync(dirname(screenshotPath), { recursive: true });
+      writeFileSync(screenshotPath, screenshot, 'base64');
     },
 
     async quit() {
