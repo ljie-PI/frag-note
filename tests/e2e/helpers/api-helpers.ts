@@ -39,6 +39,14 @@ export function createApiClient(accessToken: string) {
       return { status: res.status, data: await safeJson(res) as Record<string, unknown> };
     },
 
+    async reviewDerivedObject(objectId: string, action: 'confirm' | 'dismiss' | 'postpone') {
+      const res = await fetch(
+        `${TEST_ENV.SUPABASE_URL}/functions/v1/review-derived-object`,
+        { method: 'POST', headers, body: JSON.stringify({ objectId, action }) },
+      );
+      return { status: res.status, data: await safeJson(res) as Record<string, unknown> };
+    },
+
     async getFragment(fragmentId: string) {
       const res = await fetch(
         `${TEST_ENV.SUPABASE_URL}/rest/v1/fragments?fragment_id=eq.${fragmentId}&select=*`,
@@ -72,6 +80,15 @@ export function createApiClient(accessToken: string) {
       return safeJson(res);
     },
 
+    async getDerivedObject(objectId: string) {
+      const res = await fetch(
+        `${TEST_ENV.SUPABASE_URL}/rest/v1/derived_objects?object_id=eq.${objectId}&select=*`,
+        { headers },
+      );
+      const data = await safeJson(res) as Record<string, unknown>[];
+      return data[0] ?? null;
+    },
+
     async getProcessingJobs(fragmentId: string) {
       const res = await fetch(
         `${TEST_ENV.SUPABASE_URL}/rest/v1/processing_jobs?fragment_id=eq.${fragmentId}&select=*`,
@@ -86,6 +103,44 @@ export function createApiClient(accessToken: string) {
         { headers },
       );
       return safeJson(res);
+    },
+  };
+}
+
+/** Service-role client for test data setup (bypasses RLS) */
+export function createServiceClient() {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    apikey: TEST_ENV.SUPABASE_SERVICE_ROLE_KEY,
+    Authorization: `Bearer ${TEST_ENV.SUPABASE_SERVICE_ROLE_KEY}`,
+  };
+
+  return {
+    async insertDerivedObject(row: Record<string, unknown>) {
+      const res = await fetch(`${TEST_ENV.SUPABASE_URL}/rest/v1/derived_objects`, {
+        method: 'POST',
+        headers: { ...headers, Prefer: 'return=representation' },
+        body: JSON.stringify(row),
+      });
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(`insertDerivedObject failed (${res.status}): ${text}`);
+      }
+      const data = await res.json();
+      return Array.isArray(data) ? data[0] : data;
+    },
+
+    async insertUser(userId: string) {
+      const res = await fetch(`${TEST_ENV.SUPABASE_URL}/rest/v1/users`, {
+        method: 'POST',
+        headers: { ...headers, Prefer: 'return=minimal' },
+        body: JSON.stringify({ user_id: userId, created_at: new Date().toISOString() }),
+      });
+      // Ignore conflict (user may already exist from device session)
+      if (!res.ok && res.status !== 409) {
+        const text = await res.text();
+        throw new Error(`insertUser failed (${res.status}): ${text}`);
+      }
     },
   };
 }
