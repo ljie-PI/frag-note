@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import type { Fragment } from '@frag-note/domain';
 import type { AppState } from '../app-state.js';
 import { tokenizeText } from '../text-utils.js';
-import type { CandidateResult } from './entity-candidate-service.js';
+import type { CandidateResult } from './types.js';
 
 export function buildTopicCandidates(
   fragments: Fragment[],

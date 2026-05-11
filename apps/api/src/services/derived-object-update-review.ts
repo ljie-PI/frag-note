@@ -9,8 +9,8 @@ export function reviewDerivedObjectUpdates(state: AppState, objectId: string) {
   }
 
   const existingFragmentIds = state.derivedObjectFragments.get(objectId) ?? new Set();
-  const fragments = [...state.fragments.values()].filter((fragment) =>
-    existingFragmentIds.has(fragment.fragmentId),
+  const fragments = [...state.fragments.values()].filter(
+    (fragment) => fragment.status === 'ready' && fragment.originKind === 'user_capture',
   );
 
   return buildUpdateSuggestions(object, fragments, existingFragmentIds);

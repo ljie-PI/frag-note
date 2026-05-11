@@ -1,5 +1,5 @@
 import type { AppState } from '../services/app-state.js';
-import type { CandidateResult } from '../services/object-candidates/entity-candidate-service.js';
+import type { CandidateResult } from '../services/object-candidates/types.js';
 import { buildEntityCandidates } from '../services/object-candidates/entity-candidate-service.js';
 import { buildProjectCandidates } from '../services/object-candidates/project-candidate-service.js';
 import { buildTopicCandidates } from '../services/object-candidates/topic-candidate-service.js';

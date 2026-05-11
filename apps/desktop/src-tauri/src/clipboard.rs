@@ -1,5 +1,5 @@
 use crate::selection_grab_flow::{
-    clipboard_grab_release_settle_duration, clipboard_text_for_result, with_clipboard_grab_lock,
+    clipboard_text_for_result, with_clipboard_grab_lock,
     CopyShortcutResult,
 };
 use std::time::{Duration, Instant};

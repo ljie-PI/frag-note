@@ -19,6 +19,9 @@ export function expandDerivedObjects(
     if (!objectFragments) {
       return false;
     }
-    return [...objectFragments].some((fragmentId) => fragmentIds.has(fragmentId));
+    for (const fragmentId of objectFragments) {
+      if (fragmentIds.has(fragmentId)) return true;
+    }
+    return false;
   });
 }

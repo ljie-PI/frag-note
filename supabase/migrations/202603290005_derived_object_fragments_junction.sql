@@ -15,17 +15,28 @@ create index if not exists derived_object_fragments_fragment_idx
 alter table public.derived_object_fragments enable row level security;
 
 create policy "derived object fragments select own" on public.derived_object_fragments
-  for select using (auth.uid() = user_id);
+  for select using (
+    auth.uid() = user_id
+    and exists (select 1 from public.derived_objects do2 where do2.object_id = derived_object_fragments.object_id and do2.user_id = auth.uid())
+    and exists (select 1 from public.fragments f where f.fragment_id = derived_object_fragments.fragment_id and f.user_id = auth.uid())
+  );
 create policy "derived object fragments insert own" on public.derived_object_fragments
-  for insert with check (auth.uid() = user_id);
+  for insert with check (
+    auth.uid() = user_id
+    and exists (select 1 from public.derived_objects do2 where do2.object_id = derived_object_fragments.object_id and do2.user_id = auth.uid())
+    and exists (select 1 from public.fragments f where f.fragment_id = derived_object_fragments.fragment_id and f.user_id = auth.uid())
+  );
 create policy "derived object fragments delete own" on public.derived_object_fragments
-  for delete using (auth.uid() = user_id);
+  for delete using (
+    auth.uid() = user_id
+    and exists (select 1 from public.derived_objects do2 where do2.object_id = derived_object_fragments.object_id and do2.user_id = auth.uid())
+  );
 
 -- Migrate existing data from JSONB array to junction table
 insert into public.derived_object_fragments (object_id, fragment_id, user_id, added_at)
 select
   do2.object_id,
-  (fid::text)::uuid as fragment_id,
+  (fid #>> '{}')::uuid as fragment_id,
   do2.user_id,
   do2.created_at as added_at
 from public.derived_objects do2,

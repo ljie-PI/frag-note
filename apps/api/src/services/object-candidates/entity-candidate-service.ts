@@ -1,10 +1,8 @@
 import { randomUUID } from 'node:crypto';
 import type { Fragment } from '@frag-note/domain';
+import type { CandidateResult } from './types.js';
 
-export type CandidateResult = {
-  object: DerivedObject;
-  fragmentIds: string[];
-};
+export type { CandidateResult } from './types.js';
 
 export function buildEntityCandidates(fragments: Fragment[]): CandidateResult[] {
   const entityMap = new Map<string, Fragment[]>();
