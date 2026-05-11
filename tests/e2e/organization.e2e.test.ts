@@ -110,7 +110,8 @@ describe('E2E: Organization (Derived Objects Review)', () => {
     });
 
     logger.step('dismiss candidate');
-    await api.reviewDerivedObject(objectId, 'dismiss');
+    const dismissResult = await api.reviewDerivedObject(objectId, 'dismiss');
+    expect(dismissResult.status).toBe(200);
 
     const obj = await api.getDerivedObject(objectId);
     expect(obj.status).toBe('dismissed');
@@ -138,7 +139,8 @@ describe('E2E: Organization (Derived Objects Review)', () => {
     });
 
     logger.step('postpone candidate');
-    await api.reviewDerivedObject(objectId, 'postpone');
+    const postponeResult = await api.reviewDerivedObject(objectId, 'postpone');
+    expect(postponeResult.status).toBe(200);
 
     const obj = await api.getDerivedObject(objectId);
     expect(obj.status).toBe('postponed');

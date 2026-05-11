@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll } from 'bun:test';
+import { randomUUID } from 'node:crypto';
 import { createTestUser } from './helpers/auth-helpers.ts';
 import { createApiClient } from './helpers/api-helpers.ts';
 import { TestLogger } from './setup/test-logger.ts';
@@ -24,7 +25,7 @@ describe('E2E: Authentication Flow', () => {
   });
 
   it('logs in an existing user', async () => {
-    const email = `login-test-${Date.now()}@e2e.local`;
+    const email = `login-test-${randomUUID()}@e2e.local`;
     const password = 'test-password-123!';
 
     logger.step('register user first');
