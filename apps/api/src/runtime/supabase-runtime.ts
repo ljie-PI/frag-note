@@ -2,9 +2,6 @@ import { randomUUID } from 'node:crypto';
 import type { AnswerArtifact, DerivedObject, Fragment, Relation } from '@frag-note/domain';
 import type { CreateDeviceSessionResponse } from '@frag-note/contracts/auth';
 import type { RequestAuthContext } from '../lib/request-auth.js';
-import {
-  buildDerivedArtifactsForFragmentAsync,
-} from '../services/derived-artifacts.js';
 import { extractFragmentSearchText } from '../services/fragment-content.js';
 import { buildDeterministicQueryEmbedding } from '../services/search/query-embedding.js';
 import { buildUpdateSuggestions } from '../services/object-candidates/update-suggestions.js';
@@ -751,54 +748,6 @@ function inferPrimaryJobType(sourceType: Fragment['sourceType']) {
     default:
       return 'understanding';
   }
-}
-
-function buildSupabaseRelations(
-  existingReady: Fragment[],
-  fragment: Fragment,
-  artifacts: Awaited<ReturnType<typeof buildDerivedArtifactsForFragmentAsync>>,
-): Relation[] {
-  const keywords = new Set(
-    artifacts
-      .flatMap((artifact) =>
-        artifact.artifactType === 'tags'
-          ? ((artifact.content.tags as string[] | undefined) ?? [])
-          : [],
-      )
-      .map((keyword) => keyword.toLowerCase()),
-  );
-
-  const relations: Relation[] = [];
-
-  for (const existing of existingReady) {
-    if (existing.fragmentId === fragment.fragmentId) {
-      continue;
-    }
-
-    const overlap = tokenizeText(
-      existing.titleOptional,
-      extractFragmentSearchText(existing),
-    ).filter((keyword) => keywords.has(keyword));
-
-    if (overlap.length === 0) {
-      continue;
-    }
-
-    relations.push({
-      relationId: randomUUID(),
-      sourceObjectType: 'fragment',
-      sourceObjectId: fragment.fragmentId,
-      targetObjectType: 'fragment',
-      targetObjectId: existing.fragmentId,
-      relationType: 'related_topic',
-      confidence: Math.min(0.99, 0.5 + overlap.length * 0.2),
-      explanation: `Shared topic keywords: ${overlap.join(', ').toUpperCase()}`,
-      createdAt: new Date().toISOString(),
-      algorithmVersion: 'heuristic-v1',
-    });
-  }
-
-  return relations;
 }
 
 function buildAnswerArtifact(
