@@ -62,13 +62,13 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo(() => ({ locale, setLocale, t }), [locale, setLocale, t]);
 
-  return <LocaleContext value={value}>{children}</LocaleContext>;
+  return <LocaleContext.Provider value={value}>{children}</LocaleContext.Provider>;
 }
+
+const fallbackT = (key: string) => getNestedValue(zhCN as unknown as Record<string, unknown>, key);
+const fallbackContext: LocaleContextValue = { locale: 'zh-CN', setLocale: () => {}, t: fallbackT };
 
 export function useTranslation() {
   const context = useContext(LocaleContext);
-  if (!context) {
-    throw new Error('useTranslation must be used within a LocaleProvider');
-  }
-  return context;
+  return context ?? fallbackContext;
 }
