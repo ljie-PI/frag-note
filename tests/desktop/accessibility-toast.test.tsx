@@ -1,5 +1,18 @@
 import { beforeEach, describe, expect, it, mock } from 'bun:test';
 import { renderToStaticMarkup } from 'react-dom/server';
+import zhCN from '../../apps/desktop/src/i18n/zh-CN.json';
+
+function getNestedValue(obj: Record<string, unknown>, path: string): string {
+  const keys = path.split('.');
+  let current: unknown = obj;
+  for (const key of keys) {
+    if (current === null || current === undefined || typeof current !== 'object') return path;
+    current = (current as Record<string, unknown>)[key];
+  }
+  return typeof current === 'string' ? current : path;
+}
+
+const t = (key: string) => getNestedValue(zhCN as unknown as Record<string, unknown>, key);
 
 type Listener = (event: { event: string; payload?: unknown }) => void;
 
@@ -57,6 +70,7 @@ describe('selection grab notice toast', () => {
       setNotice: (notice) => {
         currentNotice = notice;
       },
+      t,
     });
 
     emit('accessibility-permission-needed');
@@ -96,6 +110,7 @@ describe('selection grab notice toast', () => {
       setNotice: (notice) => {
         currentNotice = notice;
       },
+      t,
     });
 
     emit('wayland-clipboard-fallback');
@@ -135,6 +150,7 @@ describe('selection grab notice toast', () => {
       setNotice: (notice) => {
         notices.push(notice);
       },
+      t,
     });
 
     emit('accessibility-permission-needed');

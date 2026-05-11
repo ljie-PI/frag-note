@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { useTranslation } from '../i18n/LocaleContext.tsx';
-import zhCN from '../i18n/zh-CN.json';
 
 export type ShortcutNoticeEventName =
   | 'accessibility-permission-needed'
@@ -22,74 +21,51 @@ type ListenImpl = (
 ) => Promise<Unlisten>;
 type InvokeImpl = (commandName: string) => Promise<unknown>;
 
-// Default translation function using zh-CN as fallback
-function defaultT(key: string): string {
-  const keys = key.split('.');
-  let current: unknown = zhCN;
-  for (const k of keys) {
-    if (current === null || current === undefined || typeof current !== 'object') return key;
-    current = (current as Record<string, unknown>)[k];
-  }
-  return typeof current === 'string' ? current : key;
-}
-
-// Translation keys for each notice event
-const NOTICE_KEYS: Record<ShortcutNoticeEventName, { title: string; message: string; actionLabel: string }> = {
-  'accessibility-permission-needed': {
-    title: 'notice.accessibilityTitle',
-    message: 'notice.accessibilityMessage',
-    actionLabel: 'notice.accessibilityAction',
-  },
-  'wayland-clipboard-fallback': {
-    title: 'notice.waylandTitle',
-    message: 'notice.waylandMessage',
-    actionLabel: 'notice.waylandAction',
-  },
-};
-
-export function createShortcutNoticeCopy(t: (key: string) => string = defaultT): Record<ShortcutNoticeEventName, ShortcutNotice> {
-  return {
-    'accessibility-permission-needed': {
-      eventName: 'accessibility-permission-needed',
-      title: t(NOTICE_KEYS['accessibility-permission-needed'].title),
-      message: t(NOTICE_KEYS['accessibility-permission-needed'].message),
-      actionLabel: t(NOTICE_KEYS['accessibility-permission-needed'].actionLabel),
-    },
-    'wayland-clipboard-fallback': {
-      eventName: 'wayland-clipboard-fallback',
-      title: t(NOTICE_KEYS['wayland-clipboard-fallback'].title),
-      message: t(NOTICE_KEYS['wayland-clipboard-fallback'].message),
-      actionLabel: t(NOTICE_KEYS['wayland-clipboard-fallback'].actionLabel),
-    },
-  };
-}
-
-export const SHORTCUT_NOTICE_EVENT_NAMES = Object.keys(
-  NOTICE_KEYS,
-) as ShortcutNoticeEventName[];
+export const SHORTCUT_NOTICE_EVENT_NAMES: ShortcutNoticeEventName[] = [
+  'accessibility-permission-needed',
+  'wayland-clipboard-fallback',
+];
 
 export function consumeShortcutNoticeEvent(
   eventName: ShortcutNoticeEventName,
   shownEvents: Set<string>,
-  t: (key: string) => string = defaultT,
+  t: (key: string) => string,
 ) {
   if (shownEvents.has(eventName)) {
     return null;
   }
 
   shownEvents.add(eventName);
-  return createShortcutNoticeCopy(t)[eventName];
+  const keys: Record<ShortcutNoticeEventName, { title: string; message: string; actionLabel: string }> = {
+    'accessibility-permission-needed': {
+      title: 'notice.accessibilityTitle',
+      message: 'notice.accessibilityMessage',
+      actionLabel: 'notice.accessibilityAction',
+    },
+    'wayland-clipboard-fallback': {
+      title: 'notice.waylandTitle',
+      message: 'notice.waylandMessage',
+      actionLabel: 'notice.waylandAction',
+    },
+  };
+  const k = keys[eventName];
+  return {
+    eventName,
+    title: t(k.title),
+    message: t(k.message),
+    actionLabel: t(k.actionLabel),
+  } satisfies ShortcutNotice;
 }
 
 export async function subscribeShortcutNoticeEvents({
   shownEvents,
   setNotice,
-  t = defaultT,
+  t,
   listenImpl = listen as ListenImpl,
 }: {
   shownEvents: Set<string>;
   setNotice: (notice: ShortcutNotice) => void;
-  t?: (key: string) => string;
+  t: (key: string) => string;
   listenImpl?: ListenImpl;
 }) {
   const unlisteners = await Promise.all(
