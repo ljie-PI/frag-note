@@ -8,20 +8,17 @@ import {
 import { extractFragmentSearchText } from '../services/fragment-content.js';
 import { buildDeterministicQueryEmbedding } from '../services/search/query-embedding.js';
 import { buildUpdateSuggestions } from '../services/object-candidates/update-suggestions.js';
-import { buildEntityCandidates } from '../services/object-candidates/entity-candidate-service.js';
-import { buildProjectCandidates } from '../services/object-candidates/project-candidate-service.js';
-import { buildTopicCandidates } from '../services/object-candidates/topic-candidate-service.js';
 import { tokenizeText } from '../services/text-utils.js';
+import { runPipeline, type PipelineContext } from '../workers/processing-pipeline.js';
+import { defaultPipeline } from '../workers/default-pipeline.js';
 import { createSupabaseRuntimeClients } from '../lib/supabase.js';
 import type { ApiRuntime, DerivedObjectUpdateSuggestion } from './runtime.js';
 import {
   buildAnswerRow,
   buildAssetRows,
-  buildDerivedArtifactRow,
   buildDerivedObjectRow,
   buildFragmentRecord,
   buildProcessingJobRecord,
-  buildRelationRow,
   mapAnswerRow,
   mapAssetRow,
   mapDerivedArtifactRow,
@@ -522,147 +519,19 @@ export async function runSupabaseProcessingLoop(signal?: AbortSignal) {
       }
 
       const fragment = mapFragmentRow(fragmentRow);
-      const assetResponse = await serviceClient
-        .from('assets')
-        .select('*')
-        .eq('fragment_id', fragment.fragmentId);
-      throwIfError(assetResponse.error);
-      const assets = await Promise.all(
-        (assetResponse.data ?? []).map(async (row) => {
-          const mapped = mapAssetRow(row);
-          const download = await serviceClient.storage
-            .from(mapped.storagePath.bucket)
-            .download(mapped.storagePath.key);
 
-          return {
-            fileName:
-              mapped.fileNameOptional ??
-              mapped.storagePath.key.split('/').at(-1) ??
-              'asset.bin',
-            storageKey: mapped.storagePath.key,
-            storageBucket: mapped.storagePath.bucket,
-            mimeType: mapped.mimeType,
-            byteSize: mapped.byteSize,
-            bytes: download.data ?? undefined,
-          };
-        }),
-      );
-      const artifacts = await buildDerivedArtifactsForFragmentAsync(
+      const ctx: PipelineContext = {
+        serviceClient,
         fragment,
-        assets,
-      );
-
-      if (artifacts.length > 0) {
-        throwIfError(
-          (
-            await serviceClient
-              .from('derived_artifacts')
-              .insert(
-                artifacts.map((artifact) =>
-                  buildDerivedArtifactRow(fragment, artifact),
-                ),
-              )
-          ).error,
-        );
-      }
-
-      const readyFragmentsResponse = await serviceClient
-        .from('fragments')
-        .select('*')
-        .eq('user_id', fragment.userId)
-        .eq('status', 'ready');
-      throwIfError(readyFragmentsResponse.error);
-
-      const existingReady = (readyFragmentsResponse.data ?? []).map((row) =>
-        mapFragmentRow(row),
-      );
-      const relations = buildSupabaseRelations(existingReady, fragment, artifacts);
-
-      if (relations.length > 0) {
-        throwIfError(
-          (
-            await serviceClient
-              .from('relations')
-              .insert(relations.map((relation) => buildRelationRow(fragment.userId, relation)))
-          ).error,
-        );
-      }
-
-      throwIfError(
-        (
-          await serviceClient
-            .from('fragments')
-            .update({
-              status: 'ready',
-              updated_at: new Date().toISOString(),
-            })
-            .eq('fragment_id', fragment.fragmentId)
-        ).error,
-      );
-
-      const nextFragments = [...existingReady, { ...fragment, status: 'ready' as const }];
-      const candidateResults = [
-        ...buildTopicCandidates(nextFragments),
-        ...buildProjectCandidates(nextFragments),
-        ...buildEntityCandidates(nextFragments),
-      ];
-
-      if (candidateResults.length > 0) {
-        const existingCandidatesResponse = await serviceClient
-          .from('derived_objects')
-          .select('*')
-          .eq('user_id', fragment.userId);
-        throwIfError(existingCandidatesResponse.error);
-        const existingCandidates = new Map(
-          (existingCandidatesResponse.data ?? []).map((row) => {
-            const object = mapDerivedObjectRow(row);
-            return [`${object.objectType}:${object.title}`, object] as const;
-          }),
-        );
-
-        const upserts = candidateResults.map((result) => {
-          const existing = existingCandidates.get(
-            `${result.object.objectType}:${result.object.title}`,
-          );
-          const object = existing
-            ? {
-                ...existing,
-                summary: result.object.summary,
-                keyEntities: result.object.keyEntities,
-                citations: result.object.citations,
-                relationEdges: result.object.relationEdges,
-                updatedAt: new Date().toISOString(),
-              }
-            : result.object;
-
-          return {
-            row: buildDerivedObjectRow(fragment.userId, object, result.fragmentIds.length),
-            fragmentIds: result.fragmentIds,
-            objectId: object.objectId,
-          };
-        });
-
-        throwIfError(
-          (await serviceClient.from('derived_objects').upsert(upserts.map((u) => u.row))).error,
-        );
-
-        // Upsert junction table rows for fragment associations
-        const junctionRows = upserts.flatMap((u) =>
-          u.fragmentIds.map((fid) => ({
-            object_id: u.objectId,
-            fragment_id: fid,
-            user_id: fragment.userId,
-            added_at: new Date().toISOString(),
-          })),
-        );
-        if (junctionRows.length > 0) {
-          throwIfError(
-            (await serviceClient
-              .from('derived_object_fragments')
-              .upsert(junctionRows, { onConflict: 'object_id,fragment_id' })).error,
-          );
-        }
-      }
+        userId: fragment.userId,
+        jobId: String(jobRow.job_id),
+        assets: [],
+        artifacts: [],
+        existingReady: [],
+        relations: [],
+        candidateResults: [],
+      };
+      await runPipeline(ctx, defaultPipeline);
 
       throwIfError(
         (
