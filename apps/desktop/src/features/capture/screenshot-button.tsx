@@ -2,12 +2,14 @@ import { useState } from 'react';
 import { Camera } from 'lucide-react';
 import type { LocalAssetPointer } from '../storage/local-assets.ts';
 import { requestRegionScreenshot } from './region-screenshot.ts';
+import { useTranslation } from '../../i18n/LocaleContext.tsx';
 
 export function ScreenshotButton({
   onCaptured,
 }: {
   onCaptured: (asset: LocalAssetPointer) => void;
 }) {
+  const { t } = useTranslation();
   const [busy, setBusy] = useState(false);
 
   return (
@@ -26,7 +28,7 @@ export function ScreenshotButton({
           setBusy(false);
         }
       }}
-      title="截图"
+      title={t('capture.screenshot')}
       type="button"
     >
       <Camera size={18} />

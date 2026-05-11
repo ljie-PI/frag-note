@@ -1,6 +1,7 @@
 import type { DerivedObject } from '@frag-note/domain';
 import { CandidateCard } from '../../features/organization/candidate-card.tsx';
 import { FolderKanban } from 'lucide-react';
+import { useTranslation } from '../../i18n/LocaleContext.tsx';
 
 export function OrganizationPage({
   candidates,
@@ -15,14 +16,16 @@ export function OrganizationPage({
   onDismiss?: (candidate: DerivedObject) => Promise<void>;
   onPostpone?: (candidate: DerivedObject) => Promise<void>;
 }) {
+  const { t } = useTranslation();
+
   return (
     <section className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-      <h2 className="text-lg font-semibold text-slate-900 mb-4">整理</h2>
+      <h2 className="text-lg font-semibold text-slate-900 mb-4">{t('organization.title')}</h2>
       {candidates.length === 0 ? (
         <div className="text-center py-12">
           <div className="flex justify-center mb-3"><FolderKanban size={48} className="text-slate-300" /></div>
-          <p className="text-sm font-medium text-slate-900">暂无建议</p>
-          <p className="text-sm text-slate-500 mt-1">随着你添加更多笔记，整理建议会出现在这里。</p>
+          <p className="text-sm font-medium text-slate-900">{t('organization.emptyTitle')}</p>
+          <p className="text-sm text-slate-500 mt-1">{t('organization.emptyDescription')}</p>
         </div>
       ) : (
       <div className="space-y-4">
@@ -36,7 +39,7 @@ export function OrganizationPage({
             />
             {onSelect ? (
               <button onClick={() => onSelect(candidate)} type="button" className="mt-2 text-sm text-purple-600 hover:text-purple-700 font-medium">
-                查看详情
+                {t('organization.viewDetail')}
               </button>
             ) : null}
           </div>

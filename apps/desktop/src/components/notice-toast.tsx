@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
+import { useTranslation } from '../i18n/LocaleContext.tsx';
 
 export type ShortcutNoticeEventName =
   | 'accessibility-permission-needed'
@@ -20,50 +21,57 @@ type ListenImpl = (
 ) => Promise<Unlisten>;
 type InvokeImpl = (commandName: string) => Promise<unknown>;
 
-export const SHORTCUT_NOTICE_COPY: Record<ShortcutNoticeEventName, ShortcutNotice> = {
-  'accessibility-permission-needed': {
-    eventName: 'accessibility-permission-needed',
-    title: '需要辅助功能权限',
-    message: '请允许碎记控制你的电脑，以便通过 Alt+Shift+C 抓取选中文字。',
-    actionLabel: '去设置',
-  },
-  'wayland-clipboard-fallback': {
-    eventName: 'wayland-clipboard-fallback',
-    title: 'Wayland 限制',
-    message: '请先按 Ctrl+C 复制后再使用 Alt+Shift+C。',
-    actionLabel: '知道了',
-  },
-};
-
-export const SHORTCUT_NOTICE_EVENT_NAMES = Object.keys(
-  SHORTCUT_NOTICE_COPY,
-) as ShortcutNoticeEventName[];
+export const SHORTCUT_NOTICE_EVENT_NAMES: ShortcutNoticeEventName[] = [
+  'accessibility-permission-needed',
+  'wayland-clipboard-fallback',
+];
 
 export function consumeShortcutNoticeEvent(
   eventName: ShortcutNoticeEventName,
   shownEvents: Set<string>,
+  t: (key: string) => string,
 ) {
   if (shownEvents.has(eventName)) {
     return null;
   }
 
   shownEvents.add(eventName);
-  return SHORTCUT_NOTICE_COPY[eventName];
+  const keys: Record<ShortcutNoticeEventName, { title: string; message: string; actionLabel: string }> = {
+    'accessibility-permission-needed': {
+      title: 'notice.accessibilityTitle',
+      message: 'notice.accessibilityMessage',
+      actionLabel: 'notice.accessibilityAction',
+    },
+    'wayland-clipboard-fallback': {
+      title: 'notice.waylandTitle',
+      message: 'notice.waylandMessage',
+      actionLabel: 'notice.waylandAction',
+    },
+  };
+  const k = keys[eventName];
+  return {
+    eventName,
+    title: t(k.title),
+    message: t(k.message),
+    actionLabel: t(k.actionLabel),
+  } satisfies ShortcutNotice;
 }
 
 export async function subscribeShortcutNoticeEvents({
   shownEvents,
   setNotice,
+  t,
   listenImpl = listen as ListenImpl,
 }: {
   shownEvents: Set<string>;
   setNotice: (notice: ShortcutNotice) => void;
+  t: (key: string) => string;
   listenImpl?: ListenImpl;
 }) {
   const unlisteners = await Promise.all(
     SHORTCUT_NOTICE_EVENT_NAMES.map((eventName) =>
       listenImpl(eventName, () => {
-        const notice = consumeShortcutNoticeEvent(eventName, shownEvents);
+        const notice = consumeShortcutNoticeEvent(eventName, shownEvents, t);
         if (notice) {
           setNotice(notice);
         }
@@ -99,6 +107,8 @@ export function ShortcutNoticeToast({
   notice: ShortcutNotice | null;
   onDismiss: () => void;
 }) {
+  const { t } = useTranslation();
+
   if (!notice) {
     return null;
   }
@@ -122,7 +132,7 @@ export function ShortcutNoticeToast({
           {notice.actionLabel}
         </button>
         <button
-          aria-label="关闭通知"
+          aria-label={t('notice.closeNotice')}
           className="absolute right-3 top-3 rounded-full px-2 py-0.5 text-sm text-stone-400 transition-colors hover:bg-stone-100 hover:text-stone-600"
           onClick={onDismiss}
           type="button"
@@ -135,6 +145,7 @@ export function ShortcutNoticeToast({
 }
 
 export function ShortcutNoticeToaster() {
+  const { t } = useTranslation();
   const [notice, setNotice] = useState<ShortcutNotice | null>(null);
   const shownEvents = useRef(new Set<string>());
 
@@ -145,6 +156,7 @@ export function ShortcutNoticeToaster() {
     void subscribeShortcutNoticeEvents({
       shownEvents: shownEvents.current,
       setNotice,
+      t,
     }).then((unlisten) => {
       if (disposed) {
         unlisten();
@@ -157,7 +169,7 @@ export function ShortcutNoticeToaster() {
       disposed = true;
       cleanup?.();
     };
-  }, []);
+  }, [t]);
 
   return (
     <ShortcutNoticeToast

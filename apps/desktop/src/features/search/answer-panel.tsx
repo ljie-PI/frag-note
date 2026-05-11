@@ -1,4 +1,5 @@
 import type { AnswerArtifact } from '@frag-note/domain';
+import { useTranslation } from '../../i18n/LocaleContext.tsx';
 
 export function AnswerPanel({
   answer,
@@ -7,20 +8,22 @@ export function AnswerPanel({
   answer: AnswerArtifact | null;
   onSave: (answer: AnswerArtifact) => Promise<void>;
 }) {
+  const { t } = useTranslation();
+
   if (!answer) {
     return (
       <section className="mt-4">
-        <h3 className="text-sm font-medium text-slate-700 mb-2">回答</h3>
-        <p className="text-sm text-slate-500">暂无回答</p>
+        <h3 className="text-sm font-medium text-slate-700 mb-2">{t('search.answerTitle')}</h3>
+        <p className="text-sm text-slate-500">{t('search.noAnswer')}</p>
       </section>
     );
   }
 
   return (
     <section className="mt-4">
-      <h3 className="text-sm font-medium text-slate-700 mb-2">回答</h3>
+      <h3 className="text-sm font-medium text-slate-700 mb-2">{t('search.answerTitle')}</h3>
       <p className="text-sm text-slate-600 bg-slate-50 rounded-lg p-3 mb-3">{answer.answerBody}</p>
-      <h4 className="text-sm font-medium text-slate-700 mb-1">引用来源</h4>
+      <h4 className="text-sm font-medium text-slate-700 mb-1">{t('search.citationTitle')}</h4>
       <ul className="list-disc list-inside text-sm text-slate-500 mb-3">
         {answer.citations.map((citation, index) => (
           <li key={`${citation.fragmentId}-${index}`}>
@@ -35,7 +38,7 @@ export function AnswerPanel({
         }}
         type="button"
       >
-        保存为碎片
+        {t('search.saveAsFragment')}
       </button>
     </section>
   );

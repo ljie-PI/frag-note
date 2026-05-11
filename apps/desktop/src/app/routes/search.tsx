@@ -3,6 +3,7 @@ import type { AnswerArtifact } from '@frag-note/domain';
 import { AnswerPanel } from '../../features/search/answer-panel.tsx';
 import { SearchForm } from '../../features/search/search-form.tsx';
 import { useSaveAnswerFragment } from '../../features/search/use-save-answer-fragment.ts';
+import { useTranslation } from '../../i18n/LocaleContext.tsx';
 
 export function SearchPage({
   onSearch,
@@ -14,6 +15,7 @@ export function SearchPage({
   }) => Promise<AnswerArtifact>;
   onSaveAnswer: (answer: AnswerArtifact) => Promise<void>;
 }) {
+  const { t } = useTranslation();
   const [queryText, setQueryText] = useState('');
   const [answer, setAnswer] = useState<AnswerArtifact | null>(null);
   const saveAnswer = useSaveAnswerFragment({
@@ -22,7 +24,7 @@ export function SearchPage({
 
   return (
     <section className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-      <h2 className="text-lg font-semibold text-slate-900 mb-4">搜索</h2>
+      <h2 className="text-lg font-semibold text-slate-900 mb-4">{t('search.title')}</h2>
       <SearchForm
         queryText={queryText}
         onChange={setQueryText}

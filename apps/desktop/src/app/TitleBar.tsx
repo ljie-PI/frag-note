@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Minus, Square, X } from 'lucide-react';
+import { useTranslation } from '../i18n/LocaleContext.tsx';
 
 export function TitleBar() {
+  const { t } = useTranslation();
   const [win, setWin] = useState<Awaited<ReturnType<typeof import('@tauri-apps/api/window').getCurrentWindow>> | null>(null);
 
   useEffect(() => {
@@ -21,7 +23,7 @@ export function TitleBar() {
         className="ml-3 text-xs text-stone-400 pointer-events-none"
         data-tauri-drag-region
       >
-        碎记
+        {t('app.name')}
       </span>
       <div className="flex-1" data-tauri-drag-region />
       <button

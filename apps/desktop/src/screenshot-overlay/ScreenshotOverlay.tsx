@@ -3,6 +3,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { emit } from '@tauri-apps/api/event';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { computeCropRegion, type Point } from './crop-region.ts';
+import { useTranslation } from '../i18n/LocaleContext.tsx';
 
 export type MonitorCapture = {
   id: number;
@@ -35,6 +36,7 @@ type SelectionRect = {
 };
 
 export function ScreenshotOverlay() {
+  const { t } = useTranslation();
   const [monitor, setMonitor] = useState<MonitorCapture | null>(null);
   const [drag, setDrag] = useState<DragState | null>(null);
   const [loading, setLoading] = useState(false);
@@ -238,7 +240,7 @@ export function ScreenshotOverlay() {
       {monitor ? <SelectionMask selection={selection} /> : null}
       {loading ? (
         <div className="absolute inset-0 grid place-items-center bg-black/40 text-sm">
-          正在准备截图…
+          {t('capture.preparingScreenshot')}
         </div>
       ) : null}
     </div>
