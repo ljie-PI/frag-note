@@ -275,10 +275,25 @@ export function createSupabaseRuntime(): ApiRuntime {
         return [];
       }
 
+      // Get fragment IDs from junction table
+      const { data: fragmentLinks, error: linkError } = await serviceClient
+        .from('derived_object_fragments')
+        .select('fragment_id')
+        .eq('object_id', objectId)
+        .eq('user_id', auth.userId);
+
+      throwIfError(linkError);
+
+      const existingFragmentIds = new Set(
+        (fragmentLinks ?? []).map((row) => String(row.fragment_id)),
+      );
+
+      // Fetch all ready fragments for the user to find unseen ones
       const { data, error } = await serviceClient
         .from('fragments')
         .select('*')
-        .in('fragment_id', object.supportingFragmentIds);
+        .eq('user_id', auth.userId)
+        .eq('status', 'ready');
 
       if (error) {
         throw error;
@@ -287,6 +302,7 @@ export function createSupabaseRuntime(): ApiRuntime {
       return buildUpdateSuggestions(
         object,
         (data ?? []).map((row) => mapFragmentRow(row)),
+        existingFragmentIds,
       ).map(
         (suggestion): DerivedObjectUpdateSuggestion => ({
           objectId,
@@ -307,19 +323,48 @@ export function createSupabaseRuntime(): ApiRuntime {
 
       const merged: DerivedObject = {
         ...target,
-        supportingFragmentIds: [
-          ...new Set([...target.supportingFragmentIds, ...source.supportingFragmentIds]),
-        ],
         citations: [...target.citations, ...source.citations],
         relationEdges: [...new Set([...target.relationEdges, ...source.relationEdges])],
         updatedAt: new Date().toISOString(),
       };
 
+      // Merge fragment associations in junction table
+      const { data: sourceFragments, error: sourceFragError } = await serviceClient
+        .from('derived_object_fragments')
+        .select('fragment_id')
+        .eq('object_id', sourceId)
+        .eq('user_id', auth.userId);
+
+      throwIfError(sourceFragError);
+
+      if (sourceFragments && sourceFragments.length > 0) {
+        const rows = sourceFragments.map((row) => ({
+          object_id: targetId,
+          fragment_id: row.fragment_id,
+          user_id: auth.userId,
+          added_at: new Date().toISOString(),
+        }));
+        throwIfError(
+          (await serviceClient
+            .from('derived_object_fragments')
+            .upsert(rows, { onConflict: 'object_id,fragment_id' })).error,
+        );
+      }
+
+      // Count merged fragments for denormalized count
+      const { count: mergedCount, error: countError } = await serviceClient
+        .from('derived_object_fragments')
+        .select('*', { count: 'exact', head: true })
+        .eq('object_id', targetId)
+        .eq('user_id', auth.userId);
+
+      throwIfError(countError);
+
       throwIfError(
         (
           await serviceClient
             .from('derived_objects')
-            .update(buildDerivedObjectRow(auth.userId, merged))
+            .update(buildDerivedObjectRow(auth.userId, merged, mergedCount ?? 0))
             .eq('user_id', auth.userId)
             .eq('object_id', targetId)
         ).error,
@@ -556,13 +601,13 @@ export async function runSupabaseProcessingLoop(signal?: AbortSignal) {
       );
 
       const nextFragments = [...existingReady, { ...fragment, status: 'ready' as const }];
-      const candidates = [
+      const candidateResults = [
         ...buildTopicCandidates(nextFragments),
         ...buildProjectCandidates(nextFragments),
         ...buildEntityCandidates(nextFragments),
       ];
 
-      if (candidates.length > 0) {
+      if (candidateResults.length > 0) {
         const existingCandidatesResponse = await serviceClient
           .from('derived_objects')
           .select('*')
@@ -575,28 +620,48 @@ export async function runSupabaseProcessingLoop(signal?: AbortSignal) {
           }),
         );
 
-        const upserts = candidates.map((candidate) => {
+        const upserts = candidateResults.map((result) => {
           const existing = existingCandidates.get(
-            `${candidate.objectType}:${candidate.title}`,
+            `${result.object.objectType}:${result.object.title}`,
           );
           const object = existing
             ? {
                 ...existing,
-                summary: candidate.summary,
-                keyEntities: candidate.keyEntities,
-                supportingFragmentIds: candidate.supportingFragmentIds,
-                citations: candidate.citations,
-                relationEdges: candidate.relationEdges,
+                summary: result.object.summary,
+                keyEntities: result.object.keyEntities,
+                citations: result.object.citations,
+                relationEdges: result.object.relationEdges,
                 updatedAt: new Date().toISOString(),
               }
-            : candidate;
+            : result.object;
 
-          return buildDerivedObjectRow(fragment.userId, object);
+          return {
+            row: buildDerivedObjectRow(fragment.userId, object, result.fragmentIds.length),
+            fragmentIds: result.fragmentIds,
+            objectId: object.objectId,
+          };
         });
 
         throwIfError(
-          (await serviceClient.from('derived_objects').upsert(upserts)).error,
+          (await serviceClient.from('derived_objects').upsert(upserts.map((u) => u.row))).error,
         );
+
+        // Upsert junction table rows for fragment associations
+        const junctionRows = upserts.flatMap((u) =>
+          u.fragmentIds.map((fid) => ({
+            object_id: u.objectId,
+            fragment_id: fid,
+            user_id: fragment.userId,
+            added_at: new Date().toISOString(),
+          })),
+        );
+        if (junctionRows.length > 0) {
+          throwIfError(
+            (await serviceClient
+              .from('derived_object_fragments')
+              .upsert(junctionRows, { onConflict: 'object_id,fragment_id' })).error,
+          );
+        }
       }
 
       throwIfError(

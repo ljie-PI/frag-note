@@ -69,9 +69,6 @@ Deno.serve(async (request) => {
         title: object.title,
         summary: object.summary,
         keyEntities: Array.isArray(object.key_entities) ? object.key_entities : [],
-        supportingFragmentIds: Array.isArray(object.supporting_fragment_ids)
-          ? object.supporting_fragment_ids
-          : [],
         citations: Array.isArray(object.citations) ? object.citations : [],
         relationEdges: Array.isArray(object.relation_edges)
           ? object.relation_edges

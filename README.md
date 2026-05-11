@@ -15,6 +15,21 @@ This repository now runs in `Supabase-only` mode.
 
 There is no local in-memory runtime fallback.
 
+### Edge Functions vs API Server
+
+The system has two write paths. Edge Functions handle low-latency direct database operations; the API server handles authenticated workflows with semantic processing.
+
+| Operation | Edge Function | API Route | Canonical Path |
+|-----------|:---:|:---:|----------------|
+| Device session creation | `device-session` | — | Edge Function |
+| Fragment capture | `capture-fragment` | `POST /v1/fragments` | API (richer processing) |
+| Fragment retry | `retry-fragment` | `POST /v1/fragments/:id/retry` | API |
+| Search | deprecated | `POST /v1/search` | API only |
+| Answer promotion | deprecated | `POST /v1/answers/:id/save-as-fragment` | API only |
+| Derived object review | `review-derived-object` | `POST /v1/derived-objects/:id/{action}` | API (typed auth) |
+
+Edge Functions `search-query` and `promote-answer` return HTTP 410 and redirect callers to the API.
+
 ## Prerequisites
 
 - `bun@1.3.5`

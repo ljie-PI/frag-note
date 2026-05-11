@@ -9,9 +9,10 @@ export type UpdateSuggestion = {
 export function buildUpdateSuggestions(
   object: DerivedObject,
   fragments: Fragment[],
+  existingFragmentIds: Set<string>,
 ): UpdateSuggestion[] {
   const unseen = fragments.filter(
-    (fragment) => !object.supportingFragmentIds.includes(fragment.fragmentId),
+    (fragment) => !existingFragmentIds.has(fragment.fragmentId),
   );
 
   if (unseen.length === 0) {

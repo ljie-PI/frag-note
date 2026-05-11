@@ -16,6 +16,7 @@ export type AppState = {
   relationsByTargetId: Map<string, Relation[]>;
   processingJobsByFragmentId: Map<string, ProcessingJob[]>;
   derivedObjects: Map<string, DerivedObject>;
+  derivedObjectFragments: Map<string, Set<string>>;
   answers: Map<string, AnswerArtifact>;
   dismissedCandidateKeys: Set<string>;
 };
@@ -29,6 +30,7 @@ export function createAppState(): AppState {
     relationsByTargetId: new Map(),
     processingJobsByFragmentId: new Map(),
     derivedObjects: new Map(),
+    derivedObjectFragments: new Map(),
     answers: new Map(),
     dismissedCandidateKeys: new Set(),
   };

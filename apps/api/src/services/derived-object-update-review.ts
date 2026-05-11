@@ -8,9 +8,10 @@ export function reviewDerivedObjectUpdates(state: AppState, objectId: string) {
     return [];
   }
 
-  const fragments = [...state.fragments.values()].filter((fragment) =>
-    object.supportingFragmentIds.includes(fragment.fragmentId),
+  const existingFragmentIds = state.derivedObjectFragments.get(objectId) ?? new Set();
+  const fragments = [...state.fragments.values()].filter(
+    (fragment) => fragment.status === 'ready' && fragment.originKind === 'user_capture',
   );
 
-  return buildUpdateSuggestions(object, fragments);
+  return buildUpdateSuggestions(object, fragments, existingFragmentIds);
 }

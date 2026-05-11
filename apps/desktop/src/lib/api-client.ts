@@ -765,7 +765,6 @@ function mapDerivedObjectRow(row: Record<string, unknown>): DerivedObject {
     title: String(row.title),
     summary: String(row.summary),
     keyEntities: (row.key_entities as string[]) ?? [],
-    supportingFragmentIds: (row.supporting_fragment_ids as string[]) ?? [],
     citations: (row.citations as DerivedObject['citations']) ?? [],
     relationEdges: (row.relation_edges as string[]) ?? [],
     ruleVersion: String(row.rule_version),

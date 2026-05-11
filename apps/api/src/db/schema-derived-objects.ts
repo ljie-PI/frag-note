@@ -1,4 +1,4 @@
-import { integer, jsonb, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import { integer, jsonb, pgTable, primaryKey, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 
 export const derivedObjectsTable = pgTable('derived_objects', {
   objectId: uuid('object_id').primaryKey(),
@@ -10,7 +10,6 @@ export const derivedObjectsTable = pgTable('derived_objects', {
   keyEntities: jsonb('key_entities').notNull(),
   ruleVersion: text('rule_version').notNull(),
   supportingFragmentCount: integer('supporting_fragment_count').notNull(),
-  supportingFragmentIds: jsonb('supporting_fragment_ids').notNull(),
   citations: jsonb('citations').notNull(),
   relationEdges: jsonb('relation_edges').notNull(),
   createdAt: timestamp('created_at', {
@@ -22,3 +21,14 @@ export const derivedObjectsTable = pgTable('derived_objects', {
     mode: 'string',
   }).notNull(),
 });
+
+export const derivedObjectFragmentsTable = pgTable(
+  'derived_object_fragments',
+  {
+    objectId: uuid('object_id').notNull(),
+    fragmentId: uuid('fragment_id').notNull(),
+    userId: uuid('user_id').notNull(),
+    addedAt: timestamp('added_at', { withTimezone: true, mode: 'string' }).notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.objectId, table.fragmentId] })],
+);

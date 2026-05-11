@@ -9,7 +9,6 @@ export const derivedObjectSchema = z.strictObject({
   title: z.string(),
   summary: z.string(),
   keyEntities: z.array(z.string()),
-  supportingFragmentIds: z.array(z.string().uuid()),
   citations: z.array(citationSchema),
   relationEdges: z.array(z.string().uuid()),
   ruleVersion: z.string(),
