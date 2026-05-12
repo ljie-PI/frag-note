@@ -104,6 +104,44 @@ export function createApiClient(accessToken: string) {
       );
       return safeJson(res);
     },
+
+    // --- API server methods (requires API server running on TEST_ENV.API_PORT) ---
+
+    async searchViaApi(queryText: string, queryType = 'natural_language') {
+      const res = await fetch(
+        `http://127.0.0.1:${TEST_ENV.API_PORT}/v1/search`,
+        {
+          method: 'POST',
+          headers: { ...headers, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ queryText, queryType }),
+        },
+      );
+      return { status: res.status, data: await safeJson(res) };
+    },
+
+    async saveAnswerAsFragmentViaApi(answerId: string) {
+      const res = await fetch(
+        `http://127.0.0.1:${TEST_ENV.API_PORT}/v1/answers/${answerId}/save-as-fragment`,
+        {
+          method: 'POST',
+          headers: { ...headers, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            originKind: 'answer_promotion',
+            sourceQuery: 'test',
+            citedFragmentIds: [],
+          }),
+        },
+      );
+      return { status: res.status, data: await safeJson(res) };
+    },
+
+    async retryFragmentViaApi(fragmentId: string) {
+      const res = await fetch(
+        `http://127.0.0.1:${TEST_ENV.API_PORT}/v1/fragments/${fragmentId}/retry`,
+        { method: 'POST', headers },
+      );
+      return { status: res.status, data: await safeJson(res) };
+    },
   };
 }
 
@@ -141,6 +179,63 @@ export function createServiceClient() {
         const text = await res.text();
         throw new Error(`insertUser failed (${res.status}): ${text}`);
       }
+    },
+
+    async getFragment(fragmentId: string) {
+      const res = await fetch(
+        `${TEST_ENV.SUPABASE_URL}/rest/v1/fragments?fragment_id=eq.${fragmentId}&select=*`,
+        { headers },
+      );
+      const data = (await safeJson(res)) as Record<string, unknown>[];
+      return data[0] ?? null;
+    },
+
+    async getArtifacts(fragmentId: string) {
+      const res = await fetch(
+        `${TEST_ENV.SUPABASE_URL}/rest/v1/derived_artifacts?fragment_id=eq.${fragmentId}&select=*`,
+        { headers },
+      );
+      return safeJson(res) as Promise<Record<string, unknown>[]>;
+    },
+
+    async getJobs(fragmentId: string) {
+      const res = await fetch(
+        `${TEST_ENV.SUPABASE_URL}/rest/v1/processing_jobs?fragment_id=eq.${fragmentId}&select=*&order=created_at.desc`,
+        { headers },
+      );
+      return safeJson(res) as Promise<Record<string, unknown>[]>;
+    },
+
+    async getRelations(fragmentId: string) {
+      const res = await fetch(
+        `${TEST_ENV.SUPABASE_URL}/rest/v1/relations?or=(source_object_id.eq.${fragmentId},target_object_id.eq.${fragmentId})&select=*`,
+        { headers },
+      );
+      return safeJson(res) as Promise<Record<string, unknown>[]>;
+    },
+
+    async getCandidates(userId: string) {
+      const res = await fetch(
+        `${TEST_ENV.SUPABASE_URL}/rest/v1/derived_objects?user_id=eq.${userId}&status=eq.candidate&select=*`,
+        { headers },
+      );
+      return safeJson(res) as Promise<Record<string, unknown>[]>;
+    },
+
+    async getDerivedObjectFragments(objectId: string) {
+      const res = await fetch(
+        `${TEST_ENV.SUPABASE_URL}/rest/v1/derived_object_fragments?object_id=eq.${objectId}&select=*`,
+        { headers },
+      );
+      return safeJson(res) as Promise<Record<string, unknown>[]>;
+    },
+
+    async getAnswers(userId: string) {
+      const res = await fetch(
+        `${TEST_ENV.SUPABASE_URL}/rest/v1/answers?user_id=eq.${userId}&select=*&order=created_at.desc`,
+        { headers },
+      );
+      return safeJson(res) as Promise<Record<string, unknown>[]>;
     },
   };
 }
