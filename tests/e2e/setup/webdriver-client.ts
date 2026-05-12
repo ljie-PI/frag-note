@@ -1,55 +1,80 @@
 /**
  * WebDriver client wrapper for Tauri desktop app E2E testing.
  *
- * Placeholder -- requires tauri-driver running + built app binary.
- *   Start tauri-driver: tauri-driver (listens on port 4444)
- *   Then connect via selenium-webdriver
- *
- * TODO: Prerequisites before this can be used:
- * 1. Fix tauri.conf.json build issue (invalid type error)
- * 2. Build desktop app: bun run --filter @frag-note/desktop tauri:build
- * 3. Start tauri-driver: ~/.cargo/bin/tauri-driver.exe (port 4444)
- * 4. Install selenium-webdriver: bun add -d selenium-webdriver @types/selenium-webdriver
+ * Requirements:
+ * 1. Vite dev server running: bun run --filter @frag-note/desktop dev
+ * 2. tauri-driver running: tauri-driver (port 4444)
+ * 3. msedgedriver in PATH
+ * 4. Desktop app built: cargo build (in apps/desktop/src-tauri/)
  */
 
-export async function createTauriDriver(appBinaryPath: string) {
-  // Dynamic import to avoid failing when selenium-webdriver isn't installed
-  const { Builder, By, until } = await import('selenium-webdriver');
+import { Builder, By, Key, until } from 'selenium-webdriver';
+import { writeFileSync, mkdirSync } from 'node:fs';
+import { dirname } from 'node:path';
 
+const APP_BINARY = 'Q:/frag-note/apps/desktop/src-tauri/target/debug/frag-note-desktop.exe';
+
+export async function createTauriDriver() {
   const driver = await new Builder()
-    .usingServer('http://localhost:4444')
+    .usingServer('http://127.0.0.1:4444')
     .withCapabilities({
-      'tauri:options': { application: appBinaryPath },
+      'ms:edgeOptions': {},
+      'tauri:options': { application: APP_BINARY },
     })
-    .forBrowser('wry')
+    .forBrowser('MicrosoftEdge')
     .build();
+
+  // Wait for app to load
+  await driver.wait(async () => {
+    const source = await driver.getPageSource();
+    return source.includes('id="root"') || source.includes('碎记') || source.includes('登录');
+  }, 10_000);
 
   return {
     driver,
     By,
+    Key,
     until,
 
-    async clickNav(key: string) {
-      const btn = await driver.findElement(
-        By.xpath(`//button[contains(., '${key}')]`),
-      );
-      await btn.click();
+    async login(email: string, password: string) {
+      // Fill email
+      const emailInput = await driver.findElement(By.css('input[type="text"], input[autocomplete="username"]'));
+      await emailInput.clear();
+      await emailInput.sendKeys(email);
+
+      // Fill password
+      const pwInput = await driver.findElement(By.css('input[type="password"]'));
+      await pwInput.clear();
+      await pwInput.sendKeys(password);
+
+      // Click login button
+      const loginBtn = await driver.findElement(By.xpath('//button[contains(text(), "登录")]'));
+      await loginBtn.click();
+
+      // Wait for main UI to appear (sidebar with 碎记)
+      await driver.wait(until.elementLocated(By.xpath('//nav')), 10_000);
     },
 
-    async fillInput(placeholder: string, value: string) {
-      const input = await driver.findElement(
-        By.css(
-          `input[placeholder*="${placeholder}"], textarea[placeholder*="${placeholder}"]`,
-        ),
-      );
+    async clickNav(label: string) {
+      const btn = await driver.findElement(By.xpath(`//button[contains(., '${label}')]`));
+      await btn.click();
+      await new Promise(r => setTimeout(r, 500));
+    },
+
+    async fillInput(selector: string, value: string) {
+      const input = await driver.findElement(By.css(selector));
       await input.clear();
       await input.sendKeys(value);
     },
 
+    async fillTextarea(value: string) {
+      const textarea = await driver.findElement(By.css('textarea'));
+      await textarea.clear();
+      await textarea.sendKeys(value);
+    },
+
     async clickButton(text: string) {
-      const btn = await driver.findElement(
-        By.xpath(`//button[contains(., '${text}')]`),
-      );
+      const btn = await driver.findElement(By.xpath(`//button[contains(., '${text}')]`));
       await btn.click();
     },
 
@@ -60,22 +85,32 @@ export async function createTauriDriver(appBinaryPath: string) {
       );
     },
 
-    async getText(selector: string) {
-      const el = await driver.findElement(By.css(selector));
-      return el.getText();
+    async hasText(text: string): Promise<boolean> {
+      const source = await driver.getPageSource();
+      return source.includes(text);
     },
 
-    async sendKeys(...keys: string[]) {
-      await driver.actions().sendKeys(...keys).perform();
+    async getPageSource(): Promise<string> {
+      return driver.getPageSource();
+    },
+
+    async sendShortcut(...keys: string[]) {
+      const actions = driver.actions();
+      for (const key of keys) {
+        await actions.keyDown(key).perform();
+      }
+      await new Promise(r => setTimeout(r, 100));
+      for (const key of keys.reverse()) {
+        await actions.keyUp(key).perform();
+      }
     },
 
     async captureScreenshot(name: string) {
-      const { writeFileSync, mkdirSync } = await import('node:fs');
-      const { dirname } = await import('node:path');
       const screenshot = await driver.takeScreenshot();
       const screenshotPath = `tests/e2e/reports/screenshots/${name}.png`;
       mkdirSync(dirname(screenshotPath), { recursive: true });
       writeFileSync(screenshotPath, screenshot, 'base64');
+      return screenshotPath;
     },
 
     async quit() {
