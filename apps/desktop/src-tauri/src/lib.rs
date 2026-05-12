@@ -9,7 +9,7 @@ use selection_grab_flow::{
     ShortcutAction, ShortcutKind, ShortcutPhase,
 };
 use std::sync::Mutex;
-use tauri::Manager;
+use tauri::{Emitter, Manager};
 use tauri_plugin_global_shortcut::{
     Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState as GsState,
 };

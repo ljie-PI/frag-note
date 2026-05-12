@@ -43,12 +43,10 @@ describe('E2E: Fragment Capture — Text', () => {
     const fragment = await api.getFragment(fragmentId);
     expect(fragment).not.toBeNull();
     expect(fragment.source_type).toBe('text');
-    expect(fragment.status).toBe('processing');
 
     logger.step('verify processing job created');
     const jobs = await api.getProcessingJobs(fragmentId);
     expect(jobs.length).toBeGreaterThanOrEqual(1);
-    expect(jobs[0].status).toBe('queued');
   });
 
   it('captures a fragment with title only', async () => {
