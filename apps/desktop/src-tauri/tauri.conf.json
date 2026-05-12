@@ -49,6 +49,9 @@
     ]
   },
   "bundle": {
-    "active": false
+    "active": false,
+    "macOS": {
+      "minimumSystemVersion": "10.15"
+    }
   }
 }

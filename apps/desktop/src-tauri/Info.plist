@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>NSMicrophoneUsageDescription</key>
+  <string>碎记需要访问麦克风以录制语音笔记</string>
+  <key>NSScreenCaptureUsageDescription</key>
+  <string>碎记需要屏幕录制权限以截屏</string>
+  <key>NSAppleEventsUsageDescription</key>
+  <string>碎记需要发送 Apple Events 以模拟键盘快捷键，用于抓取选中文字</string>
+</dict>
+</plist>
