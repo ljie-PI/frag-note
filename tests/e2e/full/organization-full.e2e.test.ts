@@ -77,30 +77,28 @@ describe('E2E: Full Organization Flow', () => {
     expect(found).toBeUndefined();
   }, 10_000);
 
-  it('supporting fragment count matches junction table', async () => {
-    const objectId = randomUUID();
-    const now = new Date().toISOString();
+  it('worker-generated candidate has junction table entries', async () => {
+    logger.step('find a worker-generated candidate');
+    const candidates = await service.getCandidates(userId);
+    if (candidates.length === 0) {
+      // Use a candidate from the confirmed test (status changed, query all)
+      const all = await service.getAllDerivedObjects(userId);
+      expect(all.length).toBeGreaterThan(0);
+      const obj = all[0];
+      const junctionRows = await service.getDerivedObjectFragments(obj.object_id as string);
+      logger.step('junction rows for confirmed object', { count: junctionRows.length });
+      expect(junctionRows.length).toBeGreaterThan(0);
+      return;
+    }
 
-    logger.step('insert test candidate with known fragments');
-    await service.insertUser(userId);
-    await service.insertDerivedObject({
-      object_id: objectId,
-      user_id: userId,
-      object_type: 'topic',
-      status: 'candidate',
-      title: 'Count Test Topic',
-      summary: 'Testing fragment count.',
-      key_entities: [],
-      rule_version: 'e2e-test',
-      supporting_fragment_count: 2,
-      citations: [],
-      relation_edges: [],
-      created_at: now,
-      updated_at: now,
-    });
+    const objectId = candidates[0].object_id as string;
+    logger.step('check junction table for candidate', { objectId });
+
+    const junctionRows = await service.getDerivedObjectFragments(objectId);
+    expect(junctionRows.length).toBeGreaterThan(0);
 
     const obj = await api.getDerivedObject(objectId);
-    expect(obj).not.toBeNull();
-    expect(Number(obj.supporting_fragment_count)).toBe(2);
+    expect(Number(obj.supporting_fragment_count)).toBe(junctionRows.length);
+    logger.step('count matches', { count: junctionRows.length, dbCount: obj.supporting_fragment_count });
   }, 10_000);
 });

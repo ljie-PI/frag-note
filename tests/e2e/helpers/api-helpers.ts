@@ -222,6 +222,14 @@ export function createServiceClient() {
       return safeJson(res) as Promise<Record<string, unknown>[]>;
     },
 
+    async getAllDerivedObjects(userId: string) {
+      const res = await fetch(
+        `${TEST_ENV.SUPABASE_URL}/rest/v1/derived_objects?user_id=eq.${userId}&select=*`,
+        { headers },
+      );
+      return safeJson(res) as Promise<Record<string, unknown>[]>;
+    },
+
     async getDerivedObjectFragments(objectId: string) {
       const res = await fetch(
         `${TEST_ENV.SUPABASE_URL}/rest/v1/derived_object_fragments?object_id=eq.${objectId}&select=*`,

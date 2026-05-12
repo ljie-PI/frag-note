@@ -121,11 +121,10 @@ describe('E2E: Full Processing Pipeline', () => {
     expect(candidates.length).toBeGreaterThan(0);
 
     const topics = candidates.filter((c) => c.object_type === 'topic');
-    if (topics.length > 0) {
-      logger.step('verify topic candidate', { title: topics[0].title });
-      expect(topics[0].status).toBe('candidate');
-      expect(Number(topics[0].supporting_fragment_count)).toBeGreaterThan(0);
-    }
+    expect(topics.length).toBeGreaterThan(0);
+    logger.step('verify topic candidate', { title: topics[0].title });
+    expect(topics[0].status).toBe('candidate');
+    expect(Number(topics[0].supporting_fragment_count)).toBeGreaterThan(0);
   }, 10_000);
 
   it('generates entity candidates from fragments mentioning same entity', async () => {
