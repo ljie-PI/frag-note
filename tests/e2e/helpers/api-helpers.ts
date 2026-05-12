@@ -109,7 +109,7 @@ export function createApiClient(accessToken: string) {
 
     async searchViaApi(queryText: string, queryType = 'natural_language') {
       const res = await fetch(
-        `http://127.0.0.1:${TEST_ENV.API_PORT}/v1/search`,
+        `${TEST_ENV.API_BASE_URL}/v1/search`,
         {
           method: 'POST',
           headers: { ...headers, 'Content-Type': 'application/json' },
@@ -121,7 +121,7 @@ export function createApiClient(accessToken: string) {
 
     async saveAnswerAsFragmentViaApi(answerId: string) {
       const res = await fetch(
-        `http://127.0.0.1:${TEST_ENV.API_PORT}/v1/answers/${answerId}/save-as-fragment`,
+        `${TEST_ENV.API_BASE_URL}/v1/answers/${answerId}/save-as-fragment`,
         {
           method: 'POST',
           headers: { ...headers, 'Content-Type': 'application/json' },
@@ -137,7 +137,7 @@ export function createApiClient(accessToken: string) {
 
     async retryFragmentViaApi(fragmentId: string) {
       const res = await fetch(
-        `http://127.0.0.1:${TEST_ENV.API_PORT}/v1/fragments/${fragmentId}/retry`,
+        `${TEST_ENV.API_BASE_URL}/v1/fragments/${fragmentId}/retry`,
         { method: 'POST', headers },
       );
       return { status: res.status, data: await safeJson(res) };

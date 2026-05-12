@@ -10,9 +10,10 @@
 
 import { Builder, By, Key, until } from 'selenium-webdriver';
 import { writeFileSync, mkdirSync } from 'node:fs';
-import { dirname } from 'node:path';
+import { dirname, resolve } from 'node:path';
 
-const APP_BINARY = 'Q:/frag-note/apps/desktop/src-tauri/target/debug/frag-note-desktop.exe';
+const APP_BINARY = process.env.TAURI_APP_BINARY ??
+  resolve('apps/desktop/src-tauri/target/debug/frag-note-desktop.exe');
 
 export async function createTauriDriver() {
   const driver = await new Builder()

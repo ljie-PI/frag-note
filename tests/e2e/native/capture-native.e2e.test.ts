@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeAll, afterAll } from 'bun:test';
-import { createTauriDriver } from './setup/webdriver-client.ts';
-import { createTestUser } from './helpers/auth-helpers.ts';
-import { createApiClient } from './helpers/api-helpers.ts';
-import { TestLogger } from './setup/test-logger.ts';
+import { createTauriDriver } from '../setup/webdriver-client.ts';
+import { createTestUser } from '../helpers/auth-helpers.ts';
+import { createApiClient } from '../helpers/api-helpers.ts';
+import { TestLogger } from '../setup/test-logger.ts';
 import { Key } from 'selenium-webdriver';
 
 describe('E2E: Native Features (Screenshot, Clipboard, Voice)', () => {

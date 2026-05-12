@@ -21,25 +21,39 @@ export async function startServices(): Promise<Services> {
   const server = spawn('bun', ['run', 'apps/api/dist/server.js'], {
     env,
     cwd: process.cwd(),
-    stdio: 'pipe',
+    stdio: ['ignore', 'pipe', 'pipe'],
   });
+  server.stdout?.resume();
+  server.stderr?.resume();
 
   const worker = spawn('bun', ['run', 'apps/api/dist/worker.js'], {
     env,
     cwd: process.cwd(),
-    stdio: 'pipe',
+    stdio: ['ignore', 'pipe', 'pipe'],
   });
+  worker.stdout?.resume();
+  worker.stderr?.resume();
 
   // Wait for server to be ready
   const start = Date.now();
+  let ready = false;
   while (Date.now() - start < 10_000) {
     try {
       const res = await fetch(`http://127.0.0.1:${port}/health`);
-      if (res.ok) break;
+      if (res.ok) {
+        ready = true;
+        break;
+      }
     } catch {
       /* not ready yet */
     }
     await new Promise((r) => setTimeout(r, 200));
+  }
+
+  if (!ready) {
+    server.kill();
+    worker.kill();
+    throw new Error(`API server did not become ready on port ${port} within 10s`);
   }
 
   return {
