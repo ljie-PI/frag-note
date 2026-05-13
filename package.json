@@ -7,6 +7,8 @@
     "packages/*"
   ],
   "scripts": {
+    "dev": "bun --env-file=.env run scripts/dev.ts",
+    "dev:reset": "bun --env-file=.env run scripts/dev.ts --reset",
     "build": "bun --env-file=.env run --workspaces build",
     "test": "bun --env-file=.env test ./tests --ignore=\"tests/e2e/**\"",
     "test:e2e": "bun --env-file=.env test tests/e2e/*.e2e.test.ts tests/e2e/helpers/ tests/e2e/setup/ --timeout 30000",
