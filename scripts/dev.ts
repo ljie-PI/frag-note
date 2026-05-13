@@ -36,7 +36,7 @@ async function waitForReady(url: string, timeoutMs = 15_000) {
     } catch { /* not ready */ }
     await new Promise((r) => setTimeout(r, 500));
   }
-  warn(`Timeout waiting for ${url}`);
+  throw new Error(`Timeout waiting for ${url} after ${timeoutMs}ms`);
 }
 
 function cleanup() {
