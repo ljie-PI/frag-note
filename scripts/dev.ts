@@ -22,7 +22,7 @@ function runAndWait(cmd: string, args: string[], name: string): Promise<void> {
   return new Promise((resolve, reject) => {
     log(`${name}...`);
     const child = spawn(cmd, args, { stdio: 'inherit', shell: true, env: process.env });
-    child.on('close', (code) => (code === 0 ? resolve() : reject(new Error(`${name} exited with ${code}`))));
+    child.on('close', (code) => (code === 0 || code === null ? resolve() : reject(new Error(`${name} exited with code ${code}`))));
     child.on('error', reject);
   });
 }
@@ -69,7 +69,7 @@ async function main() {
   await new Promise((r) => setTimeout(r, 3000));
 
   // 4. Build API
-  await runAndWait('bun', ['run', '--filter', '@frag-note/api', 'build'], 'API build');
+  await runAndWait('bun', ['--env-file=.env', 'run', '--filter', '@frag-note/api', 'build'], 'API build');
 
   // 5. API server
   run('bun', ['--env-file=.env', 'run', '--filter', '@frag-note/api', 'start'], 'API server');
