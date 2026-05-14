@@ -19,6 +19,7 @@ type Listener = (event: { event: string; payload?: unknown }) => void;
 
 const listeners = new Map<string, Listener[]>();
 const invokedCommands: string[] = [];
+const emittedEvents: unknown[] = [];
 
 installTauriMocks({
   invoke: mock(async (commandName: unknown) => {
@@ -42,21 +43,26 @@ installTauriMocks({
       }
     };
   }),
+  emitTo: mock(async (target: unknown, eventName: unknown, payload: unknown) => {
+    emittedEvents.push({ target, eventName, payload });
+  }),
+  getCurrentWindow: () => ({ label: 'quick-capture' }),
 });
 
 async function loadToastModule() {
   return import('../../apps/desktop/src/components/notice-toast.tsx');
 }
 
-function emit(eventName: string) {
+function emit(eventName: string, payload?: unknown) {
   for (const listener of listeners.get(eventName) ?? []) {
-    listener({ event: eventName });
+    listener({ event: eventName, payload });
   }
 }
 
 beforeEach(() => {
   listeners.clear();
   invokedCommands.length = 0;
+  emittedEvents.length = 0;
 });
 
 describe('selection grab notice toast', () => {
@@ -126,6 +132,64 @@ describe('selection grab notice toast', () => {
 
     expect(markup).toContain('Wayland 限制');
     expect(markup).toContain('知道了');
+  });
+
+  it('shows generic success and error toasts from the shared notice event', async () => {
+    const { ShortcutNoticeToast, subscribeShortcutNoticeEvents } = await loadToastModule();
+    const shownEvents = new Set<string>();
+    let currentNotice = null;
+
+    await subscribeShortcutNoticeEvents({
+      shownEvents,
+      setNotice: (notice) => {
+        currentNotice = notice;
+      },
+      t,
+    });
+
+    emit('shortcut-notice', { level: 'success', message: '已保存' });
+
+    const successMarkup = renderToStaticMarkup(
+      <ShortcutNoticeToast
+        notice={currentNotice}
+        onDismiss={() => {
+          currentNotice = null;
+        }}
+      />,
+    );
+
+    expect(successMarkup).toContain('已保存');
+    expect(successMarkup).toContain('text-green-600');
+    expect(successMarkup).not.toContain('去设置');
+
+    emit('shortcut-notice', { level: 'error', message: '保存失败，请重试' });
+
+    const errorMarkup = renderToStaticMarkup(
+      <ShortcutNoticeToast
+        notice={currentNotice}
+        onDismiss={() => {
+          currentNotice = null;
+        }}
+      />,
+    );
+
+    expect(errorMarkup).toContain('保存失败，请重试');
+    expect(errorMarkup).toContain('text-red-600');
+  });
+
+  it('emits generic toasts to the current window through notify', async () => {
+    const { notify } = await loadToastModule();
+
+    notify('success', '已保存');
+    await Promise.resolve();
+
+    expect(emittedEvents).toEqual([
+      {
+        target: 'quick-capture',
+        eventName: 'shortcut-notice',
+        payload: { level: 'success', message: '已保存' },
+      },
+    ]);
   });
 
   it('dismisses the toast after the Wayland acknowledgement action', async () => {

@@ -10,6 +10,7 @@ import {
   persistLocalAssetPointer,
   type LocalAssetPointer,
 } from '../storage/local-assets.ts';
+import { notify } from '../../components/notice-toast.tsx';
 import { useTranslation } from '../../i18n/LocaleContext.tsx';
 
 export type CapturePaletteRef = {
@@ -95,7 +96,15 @@ export const CapturePalette = forwardRef<CapturePaletteRef, CapturePaletteProps>
         }
         setRawText('');
         setAssets([]);
-        await onSaved();
+        notify('success', t('capture.saveSuccess'));
+        try {
+          await onSaved();
+        } catch (error) {
+          console.error('Failed after saving fragment', error);
+        }
+      } catch (error) {
+        console.error('Failed to save fragment', error);
+        notify('error', t('capture.saveError'));
       } finally {
         setBusy(false);
       }

@@ -7,6 +7,7 @@ import { mock } from 'bun:test';
 export function installTauriMocks(overrides?: {
   invoke?: (...args: unknown[]) => unknown;
   listen?: (...args: unknown[]) => unknown;
+  emitTo?: (...args: unknown[]) => unknown;
   getCurrentWindow?: () => unknown;
 }) {
   mock.module('@tauri-apps/api/core', () => ({
@@ -27,7 +28,7 @@ export function installTauriMocks(overrides?: {
     listen: overrides?.listen ?? (async () => () => {}),
     once: async () => () => {},
     emit: async () => {},
-    emitTo: async () => {},
+    emitTo: overrides?.emitTo ?? (async () => {}),
     TauriEvent: {},
   }));
 

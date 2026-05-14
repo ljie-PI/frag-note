@@ -21,6 +21,8 @@
     "placeholder": "Write something...",
     "greeting": "What would you like to note down?",
     "save": "Save",
+    "saveSuccess": "Saved",
+    "saveError": "Save failed, please try again",
     "addFile": "Add file",
     "screenshot": "Screenshot",
     "recordingStop": "Stop recording",
