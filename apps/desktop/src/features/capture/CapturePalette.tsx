@@ -1,4 +1,4 @@
-import { useState, useRef, forwardRef, useImperativeHandle } from 'react';
+import { useEffect, useMemo, useState, useRef, forwardRef, useImperativeHandle } from 'react';
 import { Paperclip, Send } from 'lucide-react';
 import type { CaptureStore } from './capture-store.ts';
 import type { ReturnTypeOfCreateSyncService } from '../sync/types.ts';
@@ -12,6 +12,13 @@ import {
 } from '../storage/local-assets.ts';
 import { notify } from '../../components/notice-toast.tsx';
 import { useTranslation } from '../../i18n/LocaleContext.tsx';
+import {
+  debounce,
+  publishDraft,
+  publishSaved,
+  subscribeDraft,
+  subscribeSaved,
+} from './draft-sync.ts';
 
 export type CapturePaletteRef = {
   appendText: (text: string) => void;
@@ -39,6 +46,15 @@ export const CapturePalette = forwardRef<CapturePaletteRef, CapturePaletteProps>
     const [busy, setBusy] = useState(false);
     const [assets, setAssets] = useState<LocalAssetPointer[]>([]);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
+    const skipNextDraftPublishRef = useRef(false);
+    const isFirstPublishRef = useRef(true);
+    const publishDraftDebounced = useMemo(
+      () =>
+        debounce((nextRawText: string, nextAssets: LocalAssetPointer[]) => {
+          void publishDraft({ rawText: nextRawText, assets: nextAssets });
+        }, 120),
+      [],
+    );
 
     const addAsset = (asset: LocalAssetPointer) =>
       setAssets((current) => persistLocalAssetPointer(asset, current));
@@ -46,6 +62,41 @@ export const CapturePalette = forwardRef<CapturePaletteRef, CapturePaletteProps>
     const hasContent = rawText.trim().length > 0 || assets.length > 0;
 
     const { recording, toggleRecording, startRecording, stopRecording } = useVoiceRecorder(addAsset);
+
+    useEffect(() => {
+      const applyRemoteDraft = (nextRawText: string, nextAssets: LocalAssetPointer[]) => {
+        skipNextDraftPublishRef.current = true;
+        setRawText(nextRawText);
+        setAssets(nextAssets);
+      };
+
+      const unlistenDraft = subscribeDraft(({ rawText: nextRawText, assets: nextAssets }) => {
+        applyRemoteDraft(nextRawText, nextAssets);
+      });
+      const unlistenSaved = subscribeSaved(() => {
+        applyRemoteDraft('', []);
+      });
+
+      return () => {
+        void unlistenDraft.then((fn) => fn());
+        void unlistenSaved.then((fn) => fn());
+        publishDraftDebounced.cancel();
+      };
+    }, [publishDraftDebounced]);
+
+    useEffect(() => {
+      if (skipNextDraftPublishRef.current) {
+        skipNextDraftPublishRef.current = false;
+        publishDraftDebounced.cancel();
+        return;
+      }
+      if (isFirstPublishRef.current) {
+        isFirstPublishRef.current = false;
+        publishDraftDebounced.cancel();
+        return;
+      }
+      publishDraftDebounced(rawText, assets);
+    }, [rawText, assets, publishDraftDebounced]);
 
     useImperativeHandle(ref, () => ({
       appendText: (text: string) => {
@@ -98,8 +149,11 @@ export const CapturePalette = forwardRef<CapturePaletteRef, CapturePaletteProps>
           return;
         }
 
+        publishDraftDebounced.cancel();
+        skipNextDraftPublishRef.current = true;
         setRawText('');
         setAssets([]);
+        await publishSaved();
         notify('success', t('capture.saveSuccess'));
 
         if (syncService) {

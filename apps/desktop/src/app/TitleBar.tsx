@@ -2,9 +2,17 @@ import { useEffect, useState } from 'react';
 import { Minus, Square, X } from 'lucide-react';
 import { useTranslation } from '../i18n/LocaleContext.tsx';
 
+type CurrentWindow = Awaited<
+  ReturnType<typeof import('@tauri-apps/api/window').getCurrentWindow>
+>;
+
+export function closeTitleBarWindow(win: Pick<CurrentWindow, 'hide'>) {
+  return win.hide();
+}
+
 export function TitleBar() {
   const { t } = useTranslation();
-  const [win, setWin] = useState<Awaited<ReturnType<typeof import('@tauri-apps/api/window').getCurrentWindow>> | null>(null);
+  const [win, setWin] = useState<CurrentWindow | null>(null);
 
   useEffect(() => {
     if (typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window) {
@@ -42,7 +50,9 @@ export function TitleBar() {
       </button>
       <button
         className="h-8 w-10 inline-flex items-center justify-center text-stone-500 hover:bg-red-500 hover:text-white transition-colors rounded-tr-xl"
-        onClick={() => win.close()}
+        onClick={() => {
+          void closeTitleBarWindow(win);
+        }}
         type="button"
       >
         <X size={14} />

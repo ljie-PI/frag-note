@@ -22,6 +22,7 @@ import { AuthGate } from './routes/auth-gate.tsx';
 import { ShortcutNoticeToaster } from '../components/notice-toast.tsx';
 import { TitleBar } from './TitleBar.tsx';
 import { useTranslation } from '../i18n/LocaleContext.tsx';
+import { subscribeSaved } from '../features/capture/draft-sync.ts';
 
 type AppProps = {
   apiClient?: ExtendedDesktopApiClient;
@@ -131,7 +132,7 @@ export function App({ apiClient: providedApiClient }: AppProps = {}) {
     document.addEventListener('mouseup', onMouseUp);
   }, []);
 
-  const refresh = async () => {
+  const refresh = useCallback(async () => {
     if (!apiClient) {
       setRecords([]);
       setCandidates([]);
@@ -145,11 +146,21 @@ export function App({ apiClient: providedApiClient }: AppProps = {}) {
 
     setRecords(nextRecords);
     setCandidates(nextCandidates);
-  };
+  }, [apiClient, store]);
 
   useEffect(() => {
     void refresh();
-  }, [apiClient]);
+  }, [refresh]);
+
+  useEffect(() => {
+    const unlisten = subscribeSaved(() => {
+      void refresh();
+    });
+
+    return () => {
+      void unlisten.then((fn) => fn());
+    };
+  }, [refresh]);
 
   const handleAnswerSave = async (answer: AnswerArtifact) => {
     if (!apiClient) {
