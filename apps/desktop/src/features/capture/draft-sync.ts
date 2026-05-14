@@ -83,27 +83,6 @@ export function debounce<Args extends unknown[]>(
   return debounced;
 }
 
-export function areDraftsEqual(
-  leftRawText: string,
-  leftAssets: LocalAssetPointer[],
-  rightRawText: string,
-  rightAssets: LocalAssetPointer[],
-): boolean {
-  if (leftRawText !== rightRawText || leftAssets.length !== rightAssets.length) {
-    return false;
-  }
-
-  return leftAssets.every((leftAsset, index) => {
-    const rightAsset = rightAssets[index];
-    return Boolean(rightAsset)
-      && leftAsset.fileName === rightAsset.fileName
-      && leftAsset.localPath === rightAsset.localPath
-      && leftAsset.mimeType === rightAsset.mimeType
-      && leftAsset.byteSize === rightAsset.byteSize
-      && leftAsset.base64Data === rightAsset.base64Data;
-  });
-}
-
 function isDraftPayload(payload: unknown): payload is DraftPayload {
   return isObject(payload)
     && typeof payload.sourceLabel === 'string'

@@ -28,15 +28,10 @@ mock.module('@tauri-apps/api/window', () => ({
   getCurrentWindow: () => ({ label: currentLabel }),
 }));
 
-import {
-  areDraftsEqual,
-  debounce,
-  publishDraft,
-  publishSaved,
-  subscribeDraft,
-  subscribeSaved,
-} from '../../apps/desktop/src/features/capture/draft-sync.ts';
+import * as draftSync from '../../apps/desktop/src/features/capture/draft-sync.ts';
 import type { LocalAssetPointer } from '../../apps/desktop/src/features/storage/local-assets.ts';
+
+const { debounce, publishDraft, publishSaved, subscribeDraft, subscribeSaved } = draftSync;
 
 const originalWindow = globalThis.window;
 
@@ -170,17 +165,8 @@ describe('capture draft sync', () => {
     expect(calls).toEqual([]);
   });
 
-  it('compares draft payload contents instead of asset array identity', () => {
-    const asset: LocalAssetPointer = {
-      fileName: 'screenshot.png',
-      mimeType: 'image/png',
-      byteSize: 42,
-      base64Data: 'abc',
-    };
-
-    expect(areDraftsEqual('same', [{ ...asset }], 'same', [{ ...asset }])).toBe(true);
-    expect(areDraftsEqual('same', [asset], 'different', [asset])).toBe(false);
-    expect(areDraftsEqual('same', [asset], 'same', [{ ...asset, byteSize: 43 }])).toBe(false);
+  it('does not export the expensive draft equality helper', () => {
+    expect('areDraftsEqual' in draftSync).toBe(false);
   });
 });
 

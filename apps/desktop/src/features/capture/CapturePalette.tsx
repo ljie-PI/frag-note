@@ -12,7 +12,6 @@ import {
 } from '../storage/local-assets.ts';
 import { useTranslation } from '../../i18n/LocaleContext.tsx';
 import {
-  areDraftsEqual,
   debounce,
   publishDraft,
   publishSaved,
@@ -47,10 +46,6 @@ export const CapturePalette = forwardRef<CapturePaletteRef, CapturePaletteProps>
     const [assets, setAssets] = useState<LocalAssetPointer[]>([]);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const isApplyingRemoteRef = useRef(false);
-    const lastAppliedRemoteDraftRef = useRef<{
-      rawText: string;
-      assets: LocalAssetPointer[];
-    } | null>(null);
     const skipNextDraftPublishRef = useRef(false);
     const publishDraftDebounced = useMemo(
       () =>
@@ -70,10 +65,6 @@ export const CapturePalette = forwardRef<CapturePaletteRef, CapturePaletteProps>
     useEffect(() => {
       const applyRemoteDraft = (nextRawText: string, nextAssets: LocalAssetPointer[]) => {
         isApplyingRemoteRef.current = true;
-        lastAppliedRemoteDraftRef.current = {
-          rawText: nextRawText,
-          assets: nextAssets,
-        };
         setRawText(nextRawText);
         setAssets(nextAssets);
         queueMicrotask(() => {
@@ -96,19 +87,12 @@ export const CapturePalette = forwardRef<CapturePaletteRef, CapturePaletteProps>
     }, [publishDraftDebounced]);
 
     useEffect(() => {
-      const lastRemoteDraft = lastAppliedRemoteDraftRef.current;
       if (skipNextDraftPublishRef.current) {
         skipNextDraftPublishRef.current = false;
         publishDraftDebounced.cancel();
         return;
       }
-      if (
-        isApplyingRemoteRef.current
-        || (lastRemoteDraft
-          && areDraftsEqual(rawText, assets, lastRemoteDraft.rawText, lastRemoteDraft.assets))
-      ) {
-        isApplyingRemoteRef.current = false;
-        lastAppliedRemoteDraftRef.current = null;
+      if (isApplyingRemoteRef.current) {
         publishDraftDebounced.cancel();
         return;
       }
