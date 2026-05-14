@@ -8,19 +8,28 @@ use selection_grab_flow::{
     clipboard_grab_release_settle_duration, shortcut_action_for_event, CopyShortcutResult,
     ShortcutAction, ShortcutKind, ShortcutPhase,
 };
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Mutex;
-use tauri::{Emitter, Manager};
+use tauri::menu::{Menu, MenuItem};
+use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
+use tauri::{Emitter, Manager, WindowEvent};
 use tauri_plugin_global_shortcut::{
     Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState as GsState,
 };
 use window::{
     emit_accessibility_permission_needed, emit_one_shot_event, emit_quick_capture,
-    show_quick_capture, QuickCapturePayload,
+    should_prevent_main_window_close, show_main_window, show_quick_capture, toggle_main_window,
+    QuickCapturePayload,
 };
 
 #[derive(Default)]
 pub struct ShortcutState {
     pub shortcut: Mutex<Option<String>>,
+}
+
+#[derive(Default)]
+pub struct TrayExitState {
+    pub is_quitting: AtomicBool,
 }
 
 fn shortcut_kind_for(
@@ -114,6 +123,7 @@ pub fn run() {
                 .build(),
         )
         .manage(ShortcutState::default())
+        .manage(TrayExitState::default())
         .manage(commands::screenshot::PendingScreenshotOverlayRequest::default())
         .setup(move |app| {
             // Register global shortcuts
@@ -138,7 +148,58 @@ pub fn run() {
                 }
             }
 
+            let show_item =
+                MenuItem::with_id(app, "show-main", "Show main window", true, None::<&str>)?;
+            let quick_item =
+                MenuItem::with_id(app, "show-quick", "Quick capture", true, None::<&str>)?;
+            let quit_item = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
+            let menu = Menu::with_items(app, &[&show_item, &quick_item, &quit_item])?;
+            let tray_icon = app.default_window_icon().cloned().ok_or_else(|| {
+                std::io::Error::new(std::io::ErrorKind::NotFound, "no default window icon")
+            })?;
+
+            let _tray = TrayIconBuilder::with_id("main-tray")
+                .icon(tray_icon)
+                .tooltip("Frag Note Desktop")
+                .menu(&menu)
+                .show_menu_on_left_click(false)
+                .on_menu_event(|app_handle, event| match event.id.as_ref() {
+                    "show-main" => show_main_window(app_handle),
+                    "show-quick" => show_quick_capture(app_handle),
+                    "quit" => {
+                        app_handle
+                            .state::<TrayExitState>()
+                            .is_quitting
+                            .store(true, Ordering::SeqCst);
+                        app_handle.exit(0);
+                    }
+                    _ => {}
+                })
+                .on_tray_icon_event(|tray, event| {
+                    if let TrayIconEvent::Click {
+                        button: MouseButton::Left,
+                        button_state: MouseButtonState::Up,
+                        ..
+                    } = event
+                    {
+                        toggle_main_window(tray.app_handle());
+                    }
+                })
+                .build(app)?;
+
             Ok(())
+        })
+        .on_window_event(|window, event| {
+            if let WindowEvent::CloseRequested { api, .. } = event {
+                let is_quitting = window
+                    .state::<TrayExitState>()
+                    .is_quitting
+                    .load(Ordering::SeqCst);
+                if should_prevent_main_window_close(window.label(), is_quitting) {
+                    api.prevent_close();
+                    let _ = window.hide();
+                }
+            }
         })
         .invoke_handler(tauri::generate_handler![
             commands::storage::save_fragment_record,
