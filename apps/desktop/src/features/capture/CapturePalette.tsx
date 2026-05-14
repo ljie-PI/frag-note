@@ -45,8 +45,8 @@ export const CapturePalette = forwardRef<CapturePaletteRef, CapturePaletteProps>
     const [busy, setBusy] = useState(false);
     const [assets, setAssets] = useState<LocalAssetPointer[]>([]);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
-    const isApplyingRemoteRef = useRef(false);
     const skipNextDraftPublishRef = useRef(false);
+    const isFirstPublishRef = useRef(true);
     const publishDraftDebounced = useMemo(
       () =>
         debounce((nextRawText: string, nextAssets: LocalAssetPointer[]) => {
@@ -64,12 +64,9 @@ export const CapturePalette = forwardRef<CapturePaletteRef, CapturePaletteProps>
 
     useEffect(() => {
       const applyRemoteDraft = (nextRawText: string, nextAssets: LocalAssetPointer[]) => {
-        isApplyingRemoteRef.current = true;
+        skipNextDraftPublishRef.current = true;
         setRawText(nextRawText);
         setAssets(nextAssets);
-        queueMicrotask(() => {
-          isApplyingRemoteRef.current = false;
-        });
       };
 
       const unlistenDraft = subscribeDraft(({ rawText: nextRawText, assets: nextAssets }) => {
@@ -92,7 +89,8 @@ export const CapturePalette = forwardRef<CapturePaletteRef, CapturePaletteProps>
         publishDraftDebounced.cancel();
         return;
       }
-      if (isApplyingRemoteRef.current) {
+      if (isFirstPublishRef.current) {
+        isFirstPublishRef.current = false;
         publishDraftDebounced.cancel();
         return;
       }
