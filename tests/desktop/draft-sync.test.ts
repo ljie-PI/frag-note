@@ -4,9 +4,11 @@ const emitted: Array<{ event: string; payload: unknown }> = [];
 const listeners = new Map<string, Set<(event: { payload: unknown }) => void>>();
 let currentLabel = 'main';
 let listenCalls = 0;
+let emitError: unknown;
 
 mock.module('@tauri-apps/api/event', () => ({
   emit: async (event: string, payload: unknown) => {
+    if (emitError) throw emitError;
     emitted.push({ event, payload });
     for (const handler of listeners.get(event) ?? []) {
       handler({ payload });
@@ -40,6 +42,7 @@ afterEach(() => {
   listeners.clear();
   currentLabel = 'main';
   listenCalls = 0;
+  emitError = undefined;
 
   if (originalWindow) {
     globalThis.window = originalWindow;
@@ -118,6 +121,27 @@ describe('capture draft sync', () => {
     ]);
 
     unlisten();
+  });
+
+  it('swallows Tauri emit failures for fire-and-forget publishers', async () => {
+    installTauriRuntime();
+    const errorCalls: unknown[][] = [];
+    const originalConsoleError = console.error;
+    console.error = (...args: unknown[]) => {
+      errorCalls.push(args);
+    };
+    emitError = new Error('emit failed');
+
+    try {
+      await expect(publishDraft({ rawText: 'draft', assets: [] })).resolves.toBeUndefined();
+      await expect(publishSaved()).resolves.toBeUndefined();
+    } finally {
+      console.error = originalConsoleError;
+    }
+
+    expect(errorCalls).toHaveLength(2);
+    expect(errorCalls[0]?.[0]).toBe('draft-sync: failed to emit');
+    expect(errorCalls[1]?.[0]).toBe('draft-sync: failed to emit');
   });
 
   it('uses no-op publish and subscribe functions outside Tauri', async () => {

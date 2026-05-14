@@ -28,13 +28,21 @@ export function getCurrentLabel(): string {
 export async function publishDraft(payload: Omit<DraftPayload, 'sourceLabel'>) {
   if (!hasTauriRuntime()) return;
 
-  await emit(DRAFT_EVENT, { ...payload, sourceLabel: getCurrentLabel() });
+  try {
+    await emit(DRAFT_EVENT, { ...payload, sourceLabel: getCurrentLabel() });
+  } catch (error) {
+    console.error('draft-sync: failed to emit', error);
+  }
 }
 
 export async function publishSaved() {
   if (!hasTauriRuntime()) return;
 
-  await emit(SAVED_EVENT, { sourceLabel: getCurrentLabel() } satisfies SavedPayload);
+  try {
+    await emit(SAVED_EVENT, { sourceLabel: getCurrentLabel() } satisfies SavedPayload);
+  } catch (error) {
+    console.error('draft-sync: failed to emit', error);
+  }
 }
 
 export function subscribeDraft(handler: (payload: DraftPayload) => void): Promise<UnlistenFn> {
