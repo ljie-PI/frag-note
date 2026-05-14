@@ -3,7 +3,7 @@ import { listen } from '@tauri-apps/api/event';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { createCaptureStore } from '../features/capture/capture-store.ts';
 import { createDesktopAdapter } from '../lib/desktop-adapter.ts';
-import { ShortcutNoticeToaster } from '../components/notice-toast.tsx';
+import { clearNotice, ShortcutNoticeToaster } from '../components/notice-toast.tsx';
 import { CapturePalette, type CapturePaletteRef } from '../features/capture/CapturePalette.tsx';
 import {
   screenshotPayloadToAsset,
@@ -27,6 +27,7 @@ export function QuickCapture() {
   const hideWindow = useCallback(async () => {
     if (closingRef.current) return;
     closingRef.current = true;
+    clearNotice();
     setVisible(false);
     await new Promise((r) => setTimeout(r, ANIM_DURATION));
     await getCurrentWindow().hide();

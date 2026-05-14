@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import { emitTo, listen } from '@tauri-apps/api/event';
+import { emit, emitTo, listen } from '@tauri-apps/api/event';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { AlertCircle, CheckCircle2, Info } from 'lucide-react';
 import { useTranslation } from '../i18n/LocaleContext.tsx';
@@ -12,10 +12,13 @@ export type ShortcutNoticeEventName =
 export type NoticeLevel = 'info' | 'success' | 'error';
 
 export const GENERIC_NOTICE_EVENT_NAME = 'shortcut-notice' as const;
+export const CLEAR_NOTICE_EVENT_NAME = 'shortcut-notice-clear' as const;
 
 type GenericNoticeEventName = typeof GENERIC_NOTICE_EVENT_NAME;
+type ClearNoticeEventName = typeof CLEAR_NOTICE_EVENT_NAME;
 
 type NoticeEventName = ShortcutNoticeEventName | GenericNoticeEventName;
+type NoticeListenEventName = NoticeEventName | ClearNoticeEventName;
 
 export type ShortcutNotice = {
   eventName: NoticeEventName;
@@ -27,7 +30,7 @@ export type ShortcutNotice = {
 
 type Unlisten = () => void;
 type ListenImpl = (
-  eventName: NoticeEventName,
+  eventName: NoticeListenEventName,
   handler: (event: unknown) => void,
 ) => Promise<Unlisten>;
 type EmitImpl = (eventName: GenericNoticeEventName, payload: { level: NoticeLevel; message: string }) => Promise<unknown>;
@@ -99,20 +102,30 @@ function eventPayload(event: unknown) {
   return isRecord(event) ? event.payload : undefined;
 }
 
-function emitCurrentWindowNotice(
+function emitNotice(
   eventName: GenericNoticeEventName,
   payload: { level: NoticeLevel; message: string },
 ) {
-  return emitTo(getCurrentWindow().label, eventName, payload);
+  return emit(eventName, payload);
 }
 
-export function notify(level: NoticeLevel, message: string, emitImpl: EmitImpl = emitCurrentWindowNotice) {
+export function notify(level: NoticeLevel, message: string, emitImpl: EmitImpl = emitNotice) {
   try {
     void Promise.resolve(emitImpl(GENERIC_NOTICE_EVENT_NAME, { level, message })).catch((error: unknown) => {
       console.error('Failed to emit notice', error);
     });
   } catch (error) {
     console.error('Failed to emit notice', error);
+  }
+}
+
+export function clearNotice() {
+  try {
+    void emitTo(getCurrentWindow().label, CLEAR_NOTICE_EVENT_NAME).catch((error: unknown) => {
+      console.error('Failed to clear notice', error);
+    });
+  } catch (error) {
+    console.error('Failed to clear notice', error);
   }
 }
 
@@ -123,7 +136,7 @@ export async function subscribeShortcutNoticeEvents({
   listenImpl = listen as ListenImpl,
 }: {
   shownEvents: Set<string>;
-  setNotice: (notice: ShortcutNotice) => void;
+  setNotice: (notice: ShortcutNotice | null) => void;
   t: (key: string) => string;
   listenImpl?: ListenImpl;
 }) {
@@ -141,6 +154,9 @@ export async function subscribeShortcutNoticeEvents({
       if (notice) {
         setNotice(notice);
       }
+    }),
+    listenImpl(CLEAR_NOTICE_EVENT_NAME, () => {
+      setNotice(null);
     }),
   ]);
 

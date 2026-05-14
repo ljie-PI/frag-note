@@ -19,7 +19,8 @@ type Listener = (event: { event: string; payload?: unknown }) => void;
 
 const listeners = new Map<string, Listener[]>();
 const invokedCommands: string[] = [];
-const emittedEvents: unknown[] = [];
+const broadcastEvents: unknown[] = [];
+const targetedEvents: unknown[] = [];
 
 installTauriMocks({
   invoke: mock(async (commandName: unknown) => {
@@ -43,8 +44,11 @@ installTauriMocks({
       }
     };
   }),
+  emit: mock(async (eventName: unknown, payload: unknown) => {
+    broadcastEvents.push({ eventName, payload });
+  }),
   emitTo: mock(async (target: unknown, eventName: unknown, payload: unknown) => {
-    emittedEvents.push({ target, eventName, payload });
+    targetedEvents.push({ target, eventName, payload });
   }),
   getCurrentWindow: () => ({ label: 'quick-capture' }),
 });
@@ -62,7 +66,8 @@ function emit(eventName: string, payload?: unknown) {
 beforeEach(() => {
   listeners.clear();
   invokedCommands.length = 0;
-  emittedEvents.length = 0;
+  broadcastEvents.length = 0;
+  targetedEvents.length = 0;
 });
 
 describe('selection grab notice toast', () => {
@@ -177,19 +182,55 @@ describe('selection grab notice toast', () => {
     expect(errorMarkup).toContain('text-red-600');
   });
 
-  it('emits generic toasts to the current window through notify', async () => {
+  it('broadcasts generic toasts to every window through notify', async () => {
     const { notify } = await loadToastModule();
 
     notify('success', '已保存');
     await Promise.resolve();
 
-    expect(emittedEvents).toEqual([
+    expect(broadcastEvents).toEqual([
       {
-        target: 'quick-capture',
         eventName: 'shortcut-notice',
         payload: { level: 'success', message: '已保存' },
       },
     ]);
+    expect(targetedEvents).toEqual([]);
+  });
+
+  it('clears notices in the current window only', async () => {
+    const { clearNotice } = await loadToastModule();
+
+    clearNotice();
+    await Promise.resolve();
+
+    expect(targetedEvents).toEqual([
+      {
+        target: 'quick-capture',
+        eventName: 'shortcut-notice-clear',
+        payload: undefined,
+      },
+    ]);
+    expect(broadcastEvents).toEqual([]);
+  });
+
+  it('clears the current toast when the clear event is received', async () => {
+    const { subscribeShortcutNoticeEvents } = await loadToastModule();
+    const shownEvents = new Set<string>();
+    let currentNotice = null;
+
+    await subscribeShortcutNoticeEvents({
+      shownEvents,
+      setNotice: (notice) => {
+        currentNotice = notice;
+      },
+      t,
+    });
+
+    emit('shortcut-notice', { level: 'success', message: '已保存' });
+    expect(currentNotice).not.toBeNull();
+
+    emit('shortcut-notice-clear');
+    expect(currentNotice).toBeNull();
   });
 
   it('auto-dismisses generic notices after the level-specific timeout', async () => {
