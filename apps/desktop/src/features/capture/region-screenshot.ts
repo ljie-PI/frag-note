@@ -59,23 +59,29 @@ export async function requestRegionScreenshotWithTimeout(
       }
     };
 
+    const closeOverlayAndRestoreCaller = () => {
+      void (async () => {
+        await invoke('hide_screenshot_overlay').catch(() => {});
+        await restoreCaller();
+      })();
+    };
+
     const resolveOnce = (asset: LocalAssetPointer | null) => {
       if (resolved) return;
       resolved = true;
       if (timeout) clearTimeout(timeout);
       cleanupListeners();
       resolve(asset);
-      void restoreCaller();
+      closeOverlayAndRestoreCaller();
     };
 
-    const resolveTimedOut = async () => {
+    const resolveTimedOut = () => {
       if (resolved) return;
       resolved = true;
       if (timeout) clearTimeout(timeout);
-      await invoke('hide_screenshot_overlay').catch(() => {});
       cleanupListeners();
       resolve(null);
-      void restoreCaller();
+      closeOverlayAndRestoreCaller();
     };
 
     const unlistenCaptured = listen<RegionScreenshotPayload>(
@@ -100,12 +106,20 @@ export async function requestRegionScreenshotWithTimeout(
 
     void Promise.all([unlistenCaptured, unlistenCancelled])
       .then(async () => {
+        if (resolved) return;
+
         if (wasVisible) {
           try {
             await callerWindow.hide();
           } catch (error) {
+            if (resolved) return;
             console.error('Failed to hide caller window before region screenshot', error);
             resolveOnce(null);
+            return;
+          }
+
+          if (resolved) {
+            void restoreCaller();
             return;
           }
         }
