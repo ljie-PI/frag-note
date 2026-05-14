@@ -19,6 +19,8 @@ type Listener = (event: { event: string; payload?: unknown }) => void;
 
 const listeners = new Map<string, Listener[]>();
 const invokedCommands: string[] = [];
+const broadcastEvents: unknown[] = [];
+const targetedEvents: unknown[] = [];
 
 installTauriMocks({
   invoke: mock(async (commandName: unknown) => {
@@ -42,21 +44,30 @@ installTauriMocks({
       }
     };
   }),
+  emit: mock(async (eventName: unknown, payload: unknown) => {
+    broadcastEvents.push({ eventName, payload });
+  }),
+  emitTo: mock(async (target: unknown, eventName: unknown, payload: unknown) => {
+    targetedEvents.push({ target, eventName, payload });
+  }),
+  getCurrentWindow: () => ({ label: 'quick-capture' }),
 });
 
 async function loadToastModule() {
   return import('../../apps/desktop/src/components/notice-toast.tsx');
 }
 
-function emit(eventName: string) {
+function emit(eventName: string, payload?: unknown) {
   for (const listener of listeners.get(eventName) ?? []) {
-    listener({ event: eventName });
+    listener({ event: eventName, payload });
   }
 }
 
 beforeEach(() => {
   listeners.clear();
   invokedCommands.length = 0;
+  broadcastEvents.length = 0;
+  targetedEvents.length = 0;
 });
 
 describe('selection grab notice toast', () => {
@@ -126,6 +137,169 @@ describe('selection grab notice toast', () => {
 
     expect(markup).toContain('Wayland 限制');
     expect(markup).toContain('知道了');
+  });
+
+  it('shows generic success and error toasts from the shared notice event', async () => {
+    const { ShortcutNoticeToast, subscribeShortcutNoticeEvents } = await loadToastModule();
+    const shownEvents = new Set<string>();
+    let currentNotice = null;
+
+    await subscribeShortcutNoticeEvents({
+      shownEvents,
+      setNotice: (notice) => {
+        currentNotice = notice;
+      },
+      t,
+    });
+
+    emit('shortcut-notice', { level: 'success', message: '已保存' });
+
+    const successMarkup = renderToStaticMarkup(
+      <ShortcutNoticeToast
+        notice={currentNotice}
+        onDismiss={() => {
+          currentNotice = null;
+        }}
+      />,
+    );
+
+    expect(successMarkup).toContain('已保存');
+    expect(successMarkup).toContain('text-green-600');
+    expect(successMarkup).not.toContain('去设置');
+
+    emit('shortcut-notice', { level: 'error', message: '保存失败，请重试' });
+
+    const errorMarkup = renderToStaticMarkup(
+      <ShortcutNoticeToast
+        notice={currentNotice}
+        onDismiss={() => {
+          currentNotice = null;
+        }}
+      />,
+    );
+
+    expect(errorMarkup).toContain('保存失败，请重试');
+    expect(errorMarkup).toContain('text-red-600');
+  });
+
+  it('broadcasts generic toasts to every window through notify', async () => {
+    const { notify } = await loadToastModule();
+
+    notify('success', '已保存');
+    await Promise.resolve();
+
+    expect(broadcastEvents).toEqual([
+      {
+        eventName: 'shortcut-notice',
+        payload: { level: 'success', message: '已保存' },
+      },
+    ]);
+    expect(targetedEvents).toEqual([]);
+  });
+
+  it('clears notices in the current window only', async () => {
+    const { clearNotice } = await loadToastModule();
+
+    clearNotice();
+    await Promise.resolve();
+
+    expect(targetedEvents).toEqual([
+      {
+        target: 'quick-capture',
+        eventName: 'shortcut-notice-clear',
+        payload: undefined,
+      },
+    ]);
+    expect(broadcastEvents).toEqual([]);
+  });
+
+  it('clears the current toast when the clear event is received', async () => {
+    const { subscribeShortcutNoticeEvents } = await loadToastModule();
+    const shownEvents = new Set<string>();
+    let currentNotice = null;
+
+    await subscribeShortcutNoticeEvents({
+      shownEvents,
+      setNotice: (notice) => {
+        currentNotice = notice;
+      },
+      t,
+    });
+
+    emit('shortcut-notice', { level: 'success', message: '已保存' });
+    expect(currentNotice).not.toBeNull();
+
+    emit('shortcut-notice-clear');
+    expect(currentNotice).toBeNull();
+  });
+
+  it('auto-dismisses generic notices after the level-specific timeout', async () => {
+    const { GENERIC_NOTICE_EVENT_NAME, scheduleNoticeAutoDismiss } = await loadToastModule();
+    let timeoutCallback: (() => void) | null = null;
+    let timeoutMs = 0;
+    let clearedTimeout: unknown = null;
+    let dismissCount = 0;
+
+    const cleanup = scheduleNoticeAutoDismiss(
+      {
+        eventName: GENERIC_NOTICE_EVENT_NAME,
+        level: 'success',
+        message: '已保存',
+      },
+      () => {
+        dismissCount += 1;
+      },
+      (callback, delay) => {
+        timeoutCallback = callback;
+        timeoutMs = delay;
+        return 'timer-id';
+      },
+      (timerId) => {
+        clearedTimeout = timerId;
+      },
+    );
+
+    expect(timeoutMs).toBe(3000);
+    timeoutCallback?.();
+    expect(dismissCount).toBe(1);
+
+    cleanup?.();
+    expect(clearedTimeout).toBe('timer-id');
+
+    scheduleNoticeAutoDismiss(
+      {
+        eventName: GENERIC_NOTICE_EVENT_NAME,
+        level: 'error',
+        message: '已保存到本地，同步失败将稍后重试',
+      },
+      () => {},
+      (_callback, delay) => {
+        timeoutMs = delay;
+        return 'error-timer-id';
+      },
+      () => {},
+    );
+
+    expect(timeoutMs).toBe(5000);
+
+    const shortcutCleanup = scheduleNoticeAutoDismiss(
+      {
+        eventName: 'wayland-clipboard-fallback',
+        level: 'info',
+        title: 'Wayland 限制',
+        message: '请先按 Ctrl+C 复制后再使用 Alt+Shift+C。',
+        actionLabel: '知道了',
+      },
+      () => {
+        dismissCount += 1;
+      },
+      () => {
+        throw new Error('shortcut notices should not schedule timers');
+      },
+      () => {},
+    );
+
+    expect(shortcutCleanup).toBeUndefined();
   });
 
   it('dismisses the toast after the Wayland acknowledgement action', async () => {
