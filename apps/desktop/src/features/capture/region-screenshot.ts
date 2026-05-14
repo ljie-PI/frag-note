@@ -27,8 +27,11 @@ export async function requestRegionScreenshot(): Promise<LocalAssetPointer | nul
 export async function requestRegionScreenshotWithTimeout(
   timeoutMs: number,
 ): Promise<LocalAssetPointer | null> {
+  const callerWindow = getCurrentWindow();
+  const callerLabel = callerWindow.label;
+  const wasVisible = (await callerWindow.isVisible?.().catch(() => false)) ?? false;
   const requestId = `region-screenshot-${Date.now()}-${++requestSequence}`;
-  const targetLabel = getCurrentWindow().label;
+  const targetLabel = callerLabel;
 
   return new Promise((resolve) => {
     let resolved = false;
@@ -39,11 +42,23 @@ export async function requestRegionScreenshotWithTimeout(
       void unlistenCancelled.then((fn) => fn());
     };
 
-    const resolveOnce = (asset: LocalAssetPointer | null) => {
+    const restoreCaller = async () => {
+      if (!wasVisible) return;
+
+      try {
+        await callerWindow.show();
+        await callerWindow.setFocus();
+      } catch (error) {
+        console.error('Failed to restore caller window after region screenshot', error);
+      }
+    };
+
+    const resolveOnce = async (asset: LocalAssetPointer | null) => {
       if (resolved) return;
       resolved = true;
       if (timeout) clearTimeout(timeout);
       cleanupListeners();
+      await restoreCaller();
       resolve(asset);
     };
 
@@ -53,6 +68,7 @@ export async function requestRegionScreenshotWithTimeout(
       if (timeout) clearTimeout(timeout);
       await invoke('hide_screenshot_overlay').catch(() => {});
       cleanupListeners();
+      await restoreCaller();
       resolve(null);
     };
 
@@ -60,7 +76,7 @@ export async function requestRegionScreenshotWithTimeout(
       'screenshot-captured',
       (event) => {
         if (event.payload.requestId !== requestId) return;
-        resolveOnce(screenshotPayloadToAsset(event.payload));
+        void resolveOnce(screenshotPayloadToAsset(event.payload));
       },
     );
 
@@ -68,7 +84,7 @@ export async function requestRegionScreenshotWithTimeout(
       'screenshot-cancelled',
       (event) => {
         if (event.payload?.requestId !== requestId) return;
-        resolveOnce(null);
+        void resolveOnce(null);
       },
     );
 
@@ -77,10 +93,17 @@ export async function requestRegionScreenshotWithTimeout(
     }, timeoutMs);
 
     void Promise.all([unlistenCaptured, unlistenCancelled])
-      .then(() => invoke('show_screenshot_overlay', { requestId, targetLabel }))
+      .then(async () => {
+        if (wasVisible) {
+          await callerWindow.hide().catch((error) => {
+            console.error('Failed to hide caller window before region screenshot', error);
+          });
+        }
+        await invoke('show_screenshot_overlay', { requestId, targetLabel });
+      })
       .catch((error) => {
         console.error('Failed to request region screenshot', error);
-        resolveOnce(null);
+        void resolveOnce(null);
       });
   });
 }
