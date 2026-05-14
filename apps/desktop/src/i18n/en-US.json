@@ -23,6 +23,7 @@
     "save": "Save",
     "saveSuccess": "Saved",
     "saveError": "Save failed, please try again",
+    "saveSyncError": "Saved locally; sync will retry later",
     "addFile": "Add file",
     "screenshot": "Screenshot",
     "recordingStop": "Stop recording",

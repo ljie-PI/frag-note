@@ -189,6 +189,29 @@ function isActionableNotice(
   return notice.eventName !== GENERIC_NOTICE_EVENT_NAME && typeof notice.actionLabel === 'string';
 }
 
+function noticeAutoDismissMs(notice: ShortcutNotice | null) {
+  if (!notice || notice.eventName !== GENERIC_NOTICE_EVENT_NAME) {
+    return null;
+  }
+
+  return notice.level === 'error' ? 5000 : 3000;
+}
+
+export function scheduleNoticeAutoDismiss(
+  notice: ShortcutNotice | null,
+  onDismiss: () => void,
+  setTimeoutImpl: (callback: () => void, delay: number) => ReturnType<typeof setTimeout> = setTimeout,
+  clearTimeoutImpl: (timerId: ReturnType<typeof setTimeout>) => void = clearTimeout,
+) {
+  const delay = noticeAutoDismissMs(notice);
+  if (delay === null) {
+    return undefined;
+  }
+
+  const timerId = setTimeoutImpl(onDismiss, delay);
+  return () => clearTimeoutImpl(timerId);
+}
+
 export function ShortcutNoticeToast({
   notice,
   onDismiss,
@@ -270,6 +293,8 @@ export function ShortcutNoticeToaster() {
       cleanup?.();
     };
   }, [t]);
+
+  useEffect(() => scheduleNoticeAutoDismiss(notice, () => setNotice(null)), [notice]);
 
   return (
     <ShortcutNoticeToast

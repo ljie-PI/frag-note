@@ -192,6 +192,75 @@ describe('selection grab notice toast', () => {
     ]);
   });
 
+  it('auto-dismisses generic notices after the level-specific timeout', async () => {
+    const { GENERIC_NOTICE_EVENT_NAME, scheduleNoticeAutoDismiss } = await loadToastModule();
+    let timeoutCallback: (() => void) | null = null;
+    let timeoutMs = 0;
+    let clearedTimeout: unknown = null;
+    let dismissCount = 0;
+
+    const cleanup = scheduleNoticeAutoDismiss(
+      {
+        eventName: GENERIC_NOTICE_EVENT_NAME,
+        level: 'success',
+        message: '已保存',
+      },
+      () => {
+        dismissCount += 1;
+      },
+      (callback, delay) => {
+        timeoutCallback = callback;
+        timeoutMs = delay;
+        return 'timer-id';
+      },
+      (timerId) => {
+        clearedTimeout = timerId;
+      },
+    );
+
+    expect(timeoutMs).toBe(3000);
+    timeoutCallback?.();
+    expect(dismissCount).toBe(1);
+
+    cleanup?.();
+    expect(clearedTimeout).toBe('timer-id');
+
+    scheduleNoticeAutoDismiss(
+      {
+        eventName: GENERIC_NOTICE_EVENT_NAME,
+        level: 'error',
+        message: '已保存到本地，同步失败将稍后重试',
+      },
+      () => {},
+      (_callback, delay) => {
+        timeoutMs = delay;
+        return 'error-timer-id';
+      },
+      () => {},
+    );
+
+    expect(timeoutMs).toBe(5000);
+
+    const shortcutCleanup = scheduleNoticeAutoDismiss(
+      {
+        eventName: 'wayland-clipboard-fallback',
+        level: 'info',
+        title: 'Wayland 限制',
+        message: '请先按 Ctrl+C 复制后再使用 Alt+Shift+C。',
+        actionLabel: '知道了',
+      },
+      () => {
+        dismissCount += 1;
+      },
+      () => {
+        throw new Error('shortcut notices should not schedule timers');
+      },
+      () => {},
+    );
+
+    expect(shortcutCleanup).toBeUndefined();
+  });
+
   it('dismisses the toast after the Wayland acknowledgement action', async () => {
     const { runShortcutNoticeAction } = await loadToastModule();
     let dismissed = false;

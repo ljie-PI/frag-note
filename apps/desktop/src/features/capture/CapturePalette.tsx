@@ -74,37 +74,48 @@ export const CapturePalette = forwardRef<CapturePaletteRef, CapturePaletteProps>
       setBusy(true);
 
       try {
-        await store.saveFragment({
-          sourceType: assets.some((asset) => asset.mimeType.startsWith('audio/'))
-            ? 'voice'
-            : assets.some((asset) => asset.mimeType === 'application/pdf')
-              ? 'pdf'
-              : assets.some((asset) => asset.mimeType.startsWith('image/'))
-                ? 'image'
-                : 'text',
-          rawText:
-            assets.length > 0
-              ? JSON.stringify({
-                  rawText,
-                  assets,
-                })
-              : rawText,
-          titleOptional: '',
-        });
-        if (syncService) {
-          await syncService.flushQueue();
+        try {
+          await store.saveFragment({
+            sourceType: assets.some((asset) => asset.mimeType.startsWith('audio/'))
+              ? 'voice'
+              : assets.some((asset) => asset.mimeType === 'application/pdf')
+                ? 'pdf'
+                : assets.some((asset) => asset.mimeType.startsWith('image/'))
+                  ? 'image'
+                  : 'text',
+            rawText:
+              assets.length > 0
+                ? JSON.stringify({
+                    rawText,
+                    assets,
+                  })
+                : rawText,
+            titleOptional: '',
+          });
+        } catch (error) {
+          console.error('Failed to save fragment locally', error);
+          notify('error', t('capture.saveError'));
+          return;
         }
+
         setRawText('');
         setAssets([]);
         notify('success', t('capture.saveSuccess'));
+
+        if (syncService) {
+          try {
+            await syncService.flushQueue();
+          } catch (error) {
+            console.error('Failed to sync fragment after save', error);
+            notify('error', t('capture.saveSyncError'));
+          }
+        }
+
         try {
           await onSaved();
         } catch (error) {
           console.error('Failed after saving fragment', error);
         }
-      } catch (error) {
-        console.error('Failed to save fragment', error);
-        notify('error', t('capture.saveError'));
       } finally {
         setBusy(false);
       }
