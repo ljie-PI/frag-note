@@ -22,6 +22,7 @@ import { AuthGate } from './routes/auth-gate.tsx';
 import { ShortcutNoticeToaster } from '../components/notice-toast.tsx';
 import { TitleBar } from './TitleBar.tsx';
 import { useTranslation } from '../i18n/LocaleContext.tsx';
+import { subscribeSaved } from '../features/capture/draft-sync.ts';
 
 type AppProps = {
   apiClient?: ExtendedDesktopApiClient;
@@ -149,6 +150,16 @@ export function App({ apiClient: providedApiClient }: AppProps = {}) {
 
   useEffect(() => {
     void refresh();
+  }, [apiClient]);
+
+  useEffect(() => {
+    const unlisten = subscribeSaved(() => {
+      void refresh();
+    });
+
+    return () => {
+      void unlisten.then((fn) => fn());
+    };
   }, [apiClient]);
 
   const handleAnswerSave = async (answer: AnswerArtifact) => {
